@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Experiment 5: Python Streaming | Kafka Virtual Lab</title>
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#4f46e5",
+            "primary-dark": "#3730a3",
+            "background-dark": "#0f172a",
+            "card-dark": "#1e293b",
+            "text-dark": "#94a3b8"
+          },
+          fontFamily: {
+            display: ["Roboto", "sans-serif"],
+            body: ["Inter", "sans-serif"],
+            mono: ["Fira Code", "monospace"]
+          },
+        },
+      },
+    };
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <link rel="stylesheet" href="css/custom.css">
+
+  <style>
+    html, body { height: 100%; overflow: hidden; }
+    .split-guide { overflow-y: auto; }
+    .sandbox-pane { overflow-y: auto; }
+
+    .term-flex { display: flex; flex-direction: column; min-height: 0; }
+    .terminal-body-exp {
+      flex: 1;
+      overflow-y: auto;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.75rem;
+      line-height: 1.5;
+      padding: 0.75rem;
+      min-height: 100px;
+    }
+
+    .step-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 26px; height: 26px; border-radius: 50%;
+      background: rgba(79,70,229,0.2); color: #818cf8;
+      font-weight: 700; font-size: 0.75rem; flex-shrink: 0;
+    }
+    .mission-step { transition: all 0.3s ease; }
+    .mission-step.done { background: rgba(16,185,129,0.1) !important; border-color: rgba(16,185,129,0.4) !important; }
+    .mission-step.done .step-icon { color: #10b981 !important; }
+
+    .code-editor {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      color: #e2e8f0;
+      border: none;
+      resize: none;
+      outline: none;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body class="bg-background-dark font-display text-slate-100 antialiased h-screen">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-6 py-3 bg-cyan-700 shadow-lg sticky top-0 z-50 h-14">
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined !text-2xl text-white">code</span>
+      <div>
+        <h1 class="text-lg font-bold text-white">Experiment 5: Python Programmatic Streaming</h1>
+        <p class="text-xs text-cyan-100 font-normal">kafka-python · Producer API · Consumer API</p>
+      </div>
+    </div>
+    <a href="experiments.html" class="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-semibold transition text-white">
+      <span class="material-symbols-outlined !text-base">arrow_back</span>
+      <span>Back to Experiments</span>
+    </a>
+  </header>
+
+  <!-- Split Screen -->
+  <div class="flex" style="height: calc(100vh - 3.5rem);">
+
+    <!-- LEFT PANE: Guide -->
+    <div class="split-guide w-2/5 h-full bg-background-dark border-r border-slate-800 p-6">
+
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-semibold uppercase tracking-wider mb-4">
+        Application Development
+      </div>
+
+      <h2 class="text-2xl font-extrabold text-white mb-3">Kafka meets Python</h2>
+      <p class="text-text-dark font-body text-sm leading-relaxed mb-5">
+        CLI tools are great for debugging, but real-world event streaming happens in code. In this lab, you will write a programmatic Producer and Consumer using the <code>kafka-python</code> library.
+      </p>
+
+      <!-- Aim -->
+      <div class="bg-cyan-500/5 border border-cyan-500/30 rounded-2xl p-5 mb-6">
+        <h3 class="text-base font-bold text-cyan-400 flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined !text-lg">flag</span> Aim
+        </h3>
+        <p class="text-sm text-slate-300 font-body leading-relaxed">
+          To transition from shell scripts to application development. You will learn how to initialize connection properties, construct message payloads, and write iteration loops to fetch records dynamically in Python. This is exactly how production systems ingest data into databases or machine learning pipelines.
+        </p>
+      </div>
+
+      <!-- Architecture Diagram -->
+      <div class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-5 mb-6">
+        <h3 class="text-base font-bold text-slate-200 flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined !text-lg text-blue-400">account_tree</span>
+          Architecture: Python Integration
+        </h3>
+        
+        <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 flex flex-col items-center gap-3 font-mono text-xs mb-4">
+          <div class="flex items-center gap-3 w-full">
+            <!-- Python Producer App -->
+            <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 flex flex-col items-center flex-1">
+              <span class="material-symbols-outlined text-blue-400 !text-xl mb-2">code</span>
+              <span class="text-blue-300 font-bold text-center">Python App<br>(Producer)</span>
+            </div>
+            
+            <div class="text-slate-500">
+              <span class="material-symbols-outlined !text-xl">arrow_right_alt</span>
+            </div>
+
+            <!-- Kafka Cluster -->
+            <div class="bg-indigo-500/10 border border-indigo-500/30 rounded-lg p-3 flex flex-col items-center flex-[1.5] relative overflow-hidden">
+              <span class="text-indigo-300 font-bold mb-2">Kafka Broker</span>
+              <div class="w-full bg-indigo-500/20 rounded py-1 text-center text-indigo-200">Topic: fsd-topic</div>
+            </div>
+
+            <div class="text-slate-500">
+              <span class="material-symbols-outlined !text-xl">arrow_right_alt</span>
+            </div>
+            
+            <!-- Python Consumer App -->
+            <div class="bg-fuchsia-500/10 border border-fuchsia-500/30 rounded-lg p-3 flex flex-col items-center flex-1">
+              <span class="material-symbols-outlined text-fuchsia-400 !text-xl mb-2">terminal</span>
+              <span class="text-fuchsia-300 font-bold text-center">Python App<br>(Consumer)</span>
+            </div>
+          </div>
+        </div>
+        <p class="text-sm text-slate-400 font-body leading-relaxed">
+          Instead of relying on the built-in Java CLI, your Python applications communicate directly with the Kafka broker over TCP using the Kafka wire protocol.
+        </p>
+      </div>
+
+      <!-- Theory & Syntax -->
+      <div class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-5 mb-6">
+        <h3 class="text-base font-bold text-slate-200 flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined !text-lg text-amber-400">data_object</span>
+          Theory: The python-kafka API
+        </h3>
+        <p class="text-sm text-slate-400 font-body leading-relaxed mb-4">
+          The <code>kafka-python</code> library provides two main classes that abstract away the complex network communication:
+        </p>
+        
+        <div class="space-y-3 font-mono text-xs text-slate-300">
+          <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+            <div class="text-[10px] text-slate-500 mb-1 font-bold uppercase tracking-wide">1. Producer API</div>
+            <span class="text-fuchsia-400">from</span> kafka <span class="text-fuchsia-400">import</span> KafkaProducer<br><br>
+            producer = KafkaProducer(bootstrap_servers=[<span class="text-green-400">'192.168.1.10:9092'</span>])<br>
+            producer.send(<span class="text-green-400">'fsd-topic'</span>, b<span class="text-green-400">'Hello from Python!'</span>)
+          </div>
+          <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+            <div class="text-[10px] text-slate-500 mb-1 font-bold uppercase tracking-wide">2. Consumer API</div>
+            <span class="text-fuchsia-400">from</span> kafka <span class="text-fuchsia-400">import</span> KafkaConsumer<br><br>
+            consumer = KafkaConsumer(<span class="text-green-400">'fsd-topic'</span>, bootstrap_servers=[<span class="text-green-400">'192.168.1.10:9092'</span>])<br>
+            <span class="text-fuchsia-400">for</span> msg <span class="text-fuchsia-400">in</span> consumer:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;print(msg.value)
+          </div>
+        </div>
+      </div>
+
+      <!-- Mission Checklist -->
+      <div class="bg-card-dark rounded-xl border border-slate-700 p-4 mb-6 shadow-md">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <span class="material-symbols-outlined !text-base text-primary">checklist</span>
+            Mission Milestones
+          </h3>
+          <span id="progress-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-indigo-300 font-mono font-bold">0 / 4 Done</span>
+        </div>
+        <div class="grid grid-cols-1 gap-2 text-sm">
+          <div id="step-broker" class="mission-step flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 step-icon">radio_button_unchecked</span>
+            <span>1. Start the Kafka Broker</span>
+          </div>
+          <div id="step-producer" class="mission-step flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 step-icon">radio_button_unchecked</span>
+            <span>2. Write and execute Producer script</span>
+          </div>
+          <div id="step-consumer" class="mission-step flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 step-icon">radio_button_unchecked</span>
+            <span>3. Write and execute Consumer script</span>
+          </div>
+          <div id="step-customTask" class="mission-step flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 step-icon">radio_button_unchecked</span>
+            <span>4. Modify Producer to send exactly 15 messages <span class="text-xs opacity-70">(Hint: change range(10) to range(15))</span></span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="mt-8 p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl flex gap-3">
+        <span class="material-symbols-outlined text-rose-400 flex-shrink-0">warning</span>
+        <p class="text-sm text-rose-300 font-body">This IDE simulator features <strong>Strict Syntax Validation</strong>. If you miss a colon, forget a parenthesis, or mess up indentation in your Python code, it will fail to run!</p>
+      </div>
+    </div>
+
+    <!-- RIGHT PANE: Python Sandbox -->
+    <div class="sandbox-pane w-3/5 h-full bg-slate-950 p-4 flex flex-col gap-4">
+
+      <!-- Terminal 1: Broker (compact) -->
+      <div class="terminal-window term-flex flex-shrink-0" style="height: 120px;">
+        <div class="terminal-header">
+          <div class="flex items-center gap-2">
+            <div class="terminal-controls">
+              <span class="terminal-dot dot-red"></span>
+              <span class="terminal-dot dot-yellow"></span>
+              <span class="terminal-dot dot-green"></span>
+            </div>
+            <span class="text-[11px] font-bold text-slate-300 font-mono ml-2">Terminal 1 — Broker (192.168.1.10)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="broker-status" class="text-[9px] px-2 py-0.5 rounded font-bold uppercase" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4)">Offline</span>
+            <button onclick="autoStartBroker()" class="px-2 py-0.5 bg-cyan-700 hover:bg-cyan-600 text-white text-[9px] font-bold rounded transition">⚡ Auto-Boot</button>
+          </div>
+        </div>
+        <div class="terminal-body-exp" id="term1-body" style="min-height:50px;">
+          <div class="term-line term-info">KRaft Broker — Ready to initialize.</div>
+        </div>
+      </div>
+
+      <!-- IDE Editor -->
+      <div class="terminal-window term-flex flex-1 border border-cyan-900/50">
+        <div class="terminal-header bg-slate-900 px-0 pt-0 pb-0 flex flex-col justify-end border-b border-slate-800">
+          <div class="flex gap-1 px-2 pt-2">
+             <button id="tab-producer" onclick="switchTab('producer')" class="px-3 py-1.5 bg-[#1e1e1e] text-cyan-400 text-[11px] font-mono border-t border-l border-r border-slate-700 rounded-t-md opacity-100 flex items-center gap-1 transition">
+               <span class="material-symbols-outlined !text-[14px]">upload</span> producer.py
+             </button>
+             <button id="tab-consumer" onclick="switchTab('consumer')" class="px-3 py-1.5 bg-slate-900 text-slate-400 hover:text-slate-200 text-[11px] font-mono border-b border-transparent rounded-t-md opacity-70 flex items-center gap-1 transition">
+               <span class="material-symbols-outlined !text-[14px]">download</span> consumer.py
+             </button>
+          </div>
+        </div>
+        <div class="flex-1 bg-[#1e1e1e] p-3 relative">
+          <!-- Line numbers (mock) -->
+          <div class="absolute left-0 top-0 bottom-0 w-8 bg-[#1e1e1e] border-r border-slate-800 flex flex-col items-end pt-3 pr-2 font-mono text-xs text-slate-600 select-none">
+            1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br>11<br>12
+          </div>
+          <div class="pl-8 h-full">
+            <textarea id="python-editor" class="code-editor" spellcheck="false" placeholder="# Write your Python code here..."></textarea>
+          </div>
+        </div>
+        <div class="p-2 bg-slate-900 border-t border-slate-800 flex justify-between items-center">
+            <span class="text-xs text-slate-500 font-mono">Powered by Simulated Python 3.10 Engine</span>
+            <button onclick="runCurrentScript()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded flex items-center gap-1 transition">
+                <span class="material-symbols-outlined !text-sm">play_arrow</span> Run Script
+            </button>
+        </div>
+      </div>
+
+      <!-- Output Panel -->
+      <div class="flex gap-4 flex-shrink-0" style="height: 180px;">
+        <!-- Console Output -->
+        <div class="terminal-window term-flex flex-1">
+          <div class="terminal-header bg-slate-900">
+            <div class="flex items-center gap-2">
+               <span class="material-symbols-outlined text-slate-400 !text-sm">terminal</span>
+              <span class="text-[11px] font-bold text-slate-300 font-mono">Console Output</span>
+            </div>
+            <button onclick="clearConsole()" class="text-slate-400 hover:text-white transition"><span class="material-symbols-outlined !text-sm">delete</span></button>
+          </div>
+          <div class="terminal-body-exp bg-black" id="console-body">
+            <div class="term-line text-slate-500 font-mono text-xs">Awaiting execution...</div>
+          </div>
+        </div>
+        
+        <!-- Live Visualization -->
+        <div class="terminal-window term-flex w-1/3">
+          <div class="terminal-header bg-slate-900">
+            <div class="flex items-center gap-2">
+               <span class="material-symbols-outlined text-emerald-400 !text-sm">monitoring</span>
+              <span class="text-[11px] font-bold text-slate-300 font-mono">Live Chart</span>
+            </div>
+          </div>
+          <div class="terminal-body-exp bg-slate-950 flex items-end justify-around p-2 gap-1" id="chart-body" style="overflow: hidden;">
+            <div class="w-full h-full flex items-center justify-center text-slate-600 text-[10px] text-center font-mono">Run consumer to see<br>live JSON telemetry</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="js/simulator-python.js"></script>
+  <script src="js/progress-tracker.js"></script>
+  <script>
+    const lab = new KafkaPythonLab();
+    let doneCount = 0;
+    
+    // Default file content
+    const files = {
+        'producer': 
+`from kafka import KafkaProducer
+import json, time, random
+
+print("Connecting to Kafka...")
+producer = KafkaProducer(bootstrap_servers=['192.168.1.10:9092'])
+
+print("Sending JSON telemetry data...")
+for i in range(10):
+    temp = random.randint(20, 45)
+    payload = json.dumps({"sensor": "S1", "temp": temp})
+    producer.send('fsd-topic', payload.encode('utf-8'))
+    print(f"Sent: {payload}")
+    time.sleep(0.5)
+
+print("Done!")`,
+        'consumer': 
+`from kafka import KafkaConsumer
+import json
+
+print("Connecting to Kafka Consumer...")
+consumer = KafkaConsumer('fsd-topic', bootstrap_servers=['192.168.1.10:9092'])
+
+for message in consumer:
+    # We expect JSON like: {"sensor": "S1", "temp": 25}
+    print(f"Received: {message.value.decode('utf-8')}")`
+    };
+
+    let activeTab = 'producer';
+    
+    // Initialize editor on load
+    document.getElementById('python-editor').value = files[activeTab];
+
+    function switchTab(tab) {
+        // Save current content before switching
+        files[activeTab] = document.getElementById('python-editor').value;
+        
+        activeTab = tab;
+        document.getElementById('python-editor').value = files[tab];
+        
+        // Update UI
+        if (tab === 'producer') {
+            document.getElementById('tab-producer').className = "px-3 py-1.5 bg-[#1e1e1e] text-cyan-400 text-[11px] font-mono border-t border-l border-r border-slate-700 rounded-t-md opacity-100 flex items-center gap-1 transition";
+            document.getElementById('tab-consumer').className = "px-3 py-1.5 bg-slate-900 text-slate-400 hover:text-slate-200 text-[11px] font-mono border-b border-transparent rounded-t-md opacity-70 flex items-center gap-1 transition";
+        } else {
+            document.getElementById('tab-consumer').className = "px-3 py-1.5 bg-[#1e1e1e] text-fuchsia-400 text-[11px] font-mono border-t border-l border-r border-slate-700 rounded-t-md opacity-100 flex items-center gap-1 transition";
+            document.getElementById('tab-producer').className = "px-3 py-1.5 bg-slate-900 text-slate-400 hover:text-slate-200 text-[11px] font-mono border-b border-transparent rounded-t-md opacity-70 flex items-center gap-1 transition";
+        }
+    }
+
+    function logTo(termId, text, cls = '') {
+      const b = document.getElementById(termId);
+      const d = document.createElement('div');
+      d.className = `term-line ${cls}`;
+      d.textContent = text;
+      b.appendChild(d);
+      b.scrollTop = b.scrollHeight;
+    }
+
+    function clearConsole() {
+        document.getElementById('console-body').innerHTML = '';
+    }
+
+    function markStep(stepId) {
+      const el = document.getElementById(stepId);
+      if (el.classList.contains('done')) return;
+      el.classList.add('done');
+      el.querySelector('.step-icon').textContent = 'check_circle';
+      doneCount++;
+      document.getElementById('progress-badge').textContent = `${doneCount} / 4 Done`;
+
+      if (doneCount === 4) {
+          setTimeout(() => {
+              KnowledgeCheck.show('exp5', 
+                'In the kafka-python library, what does the consumer do if it is instantiated without a group_id?', 
+                [
+                    'It throws a ValueError and crashes.', 
+                    'It reads as a standalone consumer independent of any group.', 
+                    'It automatically joins a group called "default".',
+                    'It randomly assigns itself to a group.'
+                ], 
+                1);
+          }, 1000);
+      }
+    }
+
+    function autoStartBroker() {
+      const res = lab.startBroker();
+      if (res.success) {
+        res.logs.forEach(l => logTo('term1-body', l, 'term-info'));
+        const b = document.getElementById('broker-status');
+        b.textContent = 'Online';
+        b.style.cssText = 'background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.4);font-size:0.5625rem;padding:0.125rem 0.5rem;border-radius:0.25rem;font-weight:700;text-transform:uppercase';
+        markStep('step-broker');
+      }
+    }
+
+    function runCurrentScript() {
+        // Save code state
+        files[activeTab] = document.getElementById('python-editor').value;
+        const code = files[activeTab];
+        
+        clearConsole();
+        logTo('console-body', `[Simulated Python Execution - ${activeTab.toUpperCase()}]`, 'text-cyan-400 mb-2');
+        
+        if (!code.trim()) {
+            logTo('console-body', 'Error: No code to execute.', 'term-error');
+            return;
+        }
+
+        const res = lab.runCode(code, activeTab);
+        
+        if (res.success) {
+            // output comes with newlines, split them
+            res.output.split('\n').forEach(line => {
+                logTo('console-body', line, 'text-slate-300');
+            });
+            if (activeTab === 'producer') markStep('step-producer');
+            if (activeTab === 'consumer') markStep('step-consumer');
+        } else {
+            logTo('console-body', res.error, 'text-rose-400 font-bold');
+            logTo('console-body', '> Process exited with code 1.', 'text-slate-500 mt-2');
+        }
+    }
+
+    // Chart Drawing Logic
+    let chartValues = [];
+    const maxBars = 12;
+
+    function renderChart() {
+        const chartBody = document.getElementById('chart-body');
+        chartBody.innerHTML = '';
+        
+        if(chartValues.length === 0) return;
+
+        const maxTemp = Math.max(50, ...chartValues);
+        
+        chartValues.forEach(val => {
+            const h = Math.max(5, (val / maxTemp) * 100);
+            
+            // color logic: hot = red, cool = blue
+            let color = 'bg-cyan-500';
+            if (val > 35) color = 'bg-rose-500';
+            else if (val > 25) color = 'bg-amber-500';
+
+            const barCol = document.createElement('div');
+            barCol.className = "flex flex-col justify-end items-center h-full w-full gap-1";
+            
+            const tooltip = document.createElement('span');
+            tooltip.className = "text-[9px] text-slate-400 font-mono";
+            tooltip.textContent = val;
+            
+            const bar = document.createElement('div');
+            bar.className = `w-full ${color} rounded-t-sm transition-all duration-300`;
+            bar.style.height = `${h}%`;
+            
+            barCol.appendChild(tooltip);
+            barCol.appendChild(bar);
+            chartBody.appendChild(barCol);
+        });
+    }
+
+    lab.on('telemetryReceived', (data) => {
+        // If data looks like {temp: 34}, visualize it
+        if(data && typeof data.temp === 'number') {
+            chartValues.push(data.temp);
+            if(chartValues.length > maxBars) {
+                chartValues.shift();
+            }
+            renderChart();
+        }
+    });
+
+    lab.on('stepUpdated', (stepName) => {
+        if (stepName === 'customTask') {
+            markStep('step-customTask');
+        }
+    });
+  </script>
+</body>
+</html>

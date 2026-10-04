@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Experiment 1: KRaft Setup | Kafka Virtual Lab</title>
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#4f46e5",
+            "primary-dark": "#3730a3",
+            kafka: "#ff6600",
+            "background-light": "#f6f7f8",
+            "background-dark": "#0f172a",
+            "card-dark": "#1e293b",
+            "text-light": "#64748b",
+            "text-dark": "#94a3b8"
+          },
+          fontFamily: {
+            display: ["Roboto", "sans-serif"],
+            body: ["Inter", "sans-serif"],
+            mono: ["Fira Code", "monospace"]
+          },
+        },
+      },
+    };
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <link rel="stylesheet" href="css/custom.css">
+
+  <style>
+    html, body { height: 100%; overflow: hidden; }
+    .split-guide { overflow-y: auto; }
+    .split-sandbox { overflow-y: auto; }
+    .terminal-body-exp { 
+      min-height: 280px; 
+      max-height: calc(100vh - 420px);
+      overflow-y: auto;
+    }
+    /* Step badge */
+    .step-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(79,70,229,0.2); color: #818cf8;
+      font-weight: 700; font-size: 0.8rem; flex-shrink: 0;
+    }
+    /* Mission step */
+    .mission-step { transition: all 0.3s ease; }
+    .mission-step.done { background: rgba(16,185,129,0.1) !important; border-color: rgba(16,185,129,0.4) !important; }
+    .mission-step.done .step-icon { color: #10b981 !important; }
+  </style>
+</head>
+
+<body class="bg-background-dark font-display text-slate-100 antialiased h-screen">
+
+  <!-- Top Header Bar -->
+  <header class="flex items-center justify-between px-6 py-3 bg-primary shadow-lg sticky top-0 z-50 h-14">
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined !text-2xl text-white">dns</span>
+      <div>
+        <h1 class="text-lg font-bold text-white">Experiment 1: Single-Node KRaft Broker Setup</h1>
+        <p class="text-xs text-indigo-100 font-normal">ZooKeeper-less Raft Metadata Mode Initialization</p>
+      </div>
+    </div>
+    <a href="experiments.html" class="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-semibold transition text-white">
+      <span class="material-symbols-outlined !text-base">arrow_back</span>
+      <span>Back to Experiments</span>
+    </a>
+  </header>
+
+  <!-- Split Screen Body -->
+  <div class="flex" style="height: calc(100vh - 3.5rem);">
+
+    <!-- LEFT PANE: Guide -->
+    <div class="split-guide w-1/2 h-full bg-background-dark border-r border-slate-800 p-8">
+
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-indigo-300 text-xs font-semibold uppercase tracking-wider mb-4">
+        Kafka Core Fundamentals
+      </div>
+
+      <h2 class="text-3xl font-extrabold text-white mb-3">Standalone KRaft Cluster</h2>
+      <p class="text-text-dark font-body text-sm leading-relaxed mb-6">
+        Prior to Apache Kafka 3.x / 4.x, external ZooKeeper clusters managed metadata and controller elections. <strong class="text-white">KRaft (KIP-500)</strong> integrates consensus directly within Kafka brokers via an internal <code class="text-indigo-300">@metadata</code> topic, eliminating ZooKeeper entirely.
+      </p>
+
+      <!-- Aim -->
+      <div class="bg-indigo-50/5 dark:bg-slate-900 border border-primary/40 rounded-2xl p-5 mb-6 glow-card">
+        <h3 class="text-base font-bold text-indigo-400 flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined !text-lg">flag</span> Aim
+        </h3>
+        <p class="text-sm text-slate-300 font-body leading-relaxed">
+          Configure environment variables (<code>JAVA_HOME</code>, <code>KAFKA_HOME</code>), generate a unique cluster UUID, format metadata log storage using <code>kafka-storage.bat</code>, and start a standalone KRaft broker.
+        </p>
+      </div>
+
+      <!-- Theory & Diagram -->
+      <div class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-5 mb-6">
+        <h3 class="text-base font-bold text-slate-200 flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined !text-lg text-emerald-400">architecture</span>
+          Theory: The KRaft Architecture
+        </h3>
+        <p class="text-sm text-slate-400 font-body leading-relaxed mb-4">
+          In traditional Kafka, a separate ZooKeeper cluster manages metadata. With KRaft, Kafka brokers use a Raft consensus protocol to maintain metadata internally within a special <code>@metadata</code> topic. This massively simplifies deployment and speeds up controller failover.
+        </p>
+        
+        <!-- KRaft Diagram -->
+        <div class="bg-slate-950 rounded-xl p-5 border border-slate-800 flex justify-center items-center font-mono text-xs">
+          <div class="border border-indigo-500/30 bg-indigo-500/10 p-5 rounded-lg flex flex-col items-center w-full max-w-sm">
+            <div class="text-indigo-300 font-bold mb-4 uppercase tracking-widest text-sm">Kafka KRaft Broker</div>
+            
+            <div class="flex gap-4 w-full">
+              <!-- Controller Quorum -->
+              <div class="flex-1 border border-emerald-500/30 bg-emerald-500/10 rounded p-3 text-center flex flex-col items-center">
+                <span class="material-symbols-outlined text-emerald-400 mb-1 !text-lg">hub</span>
+                <span class="text-emerald-300 font-bold">KRaft Controller</span>
+                <div class="mt-2 text-[10px] text-emerald-400/70 border-t border-emerald-500/30 pt-2 w-full font-bold">@metadata log</div>
+              </div>
+              
+              <!-- Data Plane -->
+              <div class="flex-1 border border-amber-500/30 bg-amber-500/10 rounded p-3 text-center flex flex-col items-center">
+                <span class="material-symbols-outlined text-amber-400 mb-1 !text-lg">database</span>
+                <span class="text-amber-300 font-bold">Data Plane</span>
+                <div class="mt-2 text-[10px] text-amber-400/70 border-t border-amber-500/30 pt-2 w-full font-bold">Topic Partitions</div>
+              </div>
+            </div>
+            
+            <div class="mt-4 text-slate-500 italic text-[10px]">Self-managed metadata (No ZooKeeper required)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mission Checklist -->
+      <div class="bg-card-dark rounded-xl border border-slate-700 p-4 mb-6 shadow-md">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <span class="material-symbols-outlined !text-base text-primary">checklist</span>
+            Mission Milestones
+          </h3>
+          <span id="progress-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-indigo-300 font-mono font-bold">0 / 3 Done</span>
+        </div>
+        <div class="grid grid-cols-1 gap-2 text-sm">
+          <div id="step-uuid" class="mission-step flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 step-icon">radio_button_unchecked</span>
+            <span>1. Generate a Cluster UUID</span>
+          </div>
+          <div id="step-format" class="mission-step flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 step-icon">radio_button_unchecked</span>
+            <span>2. Format the Storage Directory</span>
+          </div>
+          <div id="step-start" class="mission-step flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 step-icon">radio_button_unchecked</span>
+            <span>3. Start the KRaft Broker</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Steps -->
+      <h3 class="text-base font-bold text-slate-200 mb-3 flex items-center gap-2">
+        <span class="material-symbols-outlined !text-lg text-primary">format_list_numbered</span>
+        Step-by-Step Commands
+      </h3>
+
+      <div class="space-y-6 font-body">
+          <div class="flex gap-4 items-start">
+            <div class="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 text-indigo-400 flex items-center justify-center font-bold text-sm">1</div>
+            <div>
+              <p class="font-bold text-white mb-1 text-sm">Generate Cluster UUID</p>
+              <p class="text-slate-400 mb-2 leading-relaxed text-sm">Kafka requires a unique identifier for the cluster. This replaces ZooKeeper's cluster ID generation.</p>
+              <pre class="bg-slate-950 text-emerald-400 p-2 rounded text-sm font-mono whitespace-pre-wrap break-all border border-emerald-900/30">kafka-storage.bat random-uuid</pre>
+              <p class="text-sm text-slate-400 mt-2">Copy the UUID output — you'll need it in Step 2.</p>
+            </div>
+          </div>
+
+          <div class="flex gap-4 items-start">
+            <div class="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 text-indigo-400 flex items-center justify-center font-bold text-sm">2</div>
+            <div>
+              <p class="font-bold text-white mb-1 text-sm">Format Log Directories</p>
+              <p class="text-slate-400 mb-2 leading-relaxed text-sm">Format the data directory (defined in <code>server.properties</code>) using the UUID you just generated.</p>
+              <pre class="bg-slate-950 text-emerald-400 p-2 rounded text-sm font-mono whitespace-pre-wrap break-all border border-emerald-900/30">kafka-storage.bat format -t &lt;UUID&gt; -c config\server.properties</pre>
+            </div>
+          </div>
+
+          <div class="flex gap-4 items-start">
+            <div class="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 text-indigo-400 flex items-center justify-center font-bold text-sm">3</div>
+            <div>
+              <p class="font-bold text-white mb-1 text-sm">Start the Server</p>
+              <p class="text-slate-400 mb-2 leading-relaxed text-sm">Boot up the KRaft broker. Watch the terminal logs to verify the controller quorum election.</p>
+              <pre class="bg-slate-950 text-emerald-400 p-2 rounded text-sm font-mono whitespace-pre-wrap break-all border border-emerald-900/30">kafka-server-start.bat config\server.properties</pre>
+            </div>
+          </div>
+      </div>
+
+      <!-- Hint -->
+      <div class="mt-8 bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl flex gap-3">
+        <span class="material-symbols-outlined text-amber-400 flex-shrink-0">lightbulb</span>
+        <p class="text-sm text-amber-300 font-body">Use the <strong>quick-action buttons</strong> in the sandbox to auto-fill commands, or type them manually into the terminal!</p>
+      </div>
+    </div>
+
+    <!-- RIGHT PANE: Interactive Sandbox -->
+    <div class="split-sandbox w-1/2 h-full bg-slate-950 p-6 flex flex-col gap-5">
+
+      <!-- Terminal: Machine 1 -->
+      <div class="terminal-window flex-1 flex flex-col">
+        <div class="terminal-header">
+          <div class="flex items-center gap-2">
+            <div class="terminal-controls">
+              <span class="terminal-dot dot-red"></span>
+              <span class="terminal-dot dot-yellow"></span>
+              <span class="terminal-dot dot-green"></span>
+            </div>
+            <span class="text-xs font-bold text-slate-300 font-mono ml-2">Machine 1 — KRaft Broker (192.168.1.10)</span>
+          </div>
+          <span id="status-badge" class="text-[10px] px-2 py-0.5 rounded font-bold uppercase" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4)">Offline</span>
+        </div>
+
+        <div class="terminal-body terminal-body-exp" id="term1-body">
+          <div class="term-line term-info">Microsoft Windows [Version 10.0.19045.3803]</div>
+          <div class="term-line term-info">(c) Microsoft Corporation. All rights reserved.</div>
+          <div class="term-line term-info" style="margin-top:0.5rem">Ready for Kafka KRaft storage initialization and broker boot.</div>
+          <div class="term-line" style="color:#818cf8">Tip: Use the quick-action buttons below or type commands manually!</div>
+        </div>
+
+        <!-- Input Row -->
+        <div class="p-3 bg-slate-900 border-t border-slate-800">
+          <div class="terminal-prompt-line">
+            <span class="term-cmd font-mono text-xs mt-1">C:\kafka4.3.1&gt;</span>
+            <input type="text" id="term1-input" class="terminal-input bg-slate-950/80 border border-slate-700/60 rounded px-2 py-1 text-slate-200 focus:ring-1 focus:ring-primary focus:border-primary w-full" placeholder="type kafka-storage.bat / kafka-server-start.bat ..." onkeydown="handleTerminal1(event)" />
+          </div>
+          <!-- Quick Action Buttons -->
+          <div class="flex flex-wrap gap-1.5 mt-2">
+            <button onclick="runQuick('uuid')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-indigo-300 rounded border border-slate-700 transition">1. random-uuid</button>
+            <button onclick="runQuick('format')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-indigo-300 rounded border border-slate-700 transition">2. format storage</button>
+            <button onclick="runQuick('start')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-emerald-400 rounded border border-slate-700 font-bold transition">3. kafka-server-start</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="js/simulator.js"></script>
+  <script src="js/progress-tracker.js"></script>
+  <script>
+    const lab = new KafkaVirtualLab();
+    let generatedUuid = null;
+    let doneCount = 0;
+
+    function appendLine(text, cls = '') {
+      const body = document.getElementById('term1-body');
+      const div = document.createElement('div');
+      div.className = `term-line ${cls}`;
+      div.textContent = text;
+      body.appendChild(div);
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function markStep(stepId) {
+      const el = document.getElementById(stepId);
+      el.classList.add('done');
+      el.querySelector('.step-icon').textContent = 'check_circle';
+      doneCount++;
+      document.getElementById('progress-badge').textContent = `${doneCount} / 3 Done`;
+      
+      if (doneCount === 3) {
+          setTimeout(() => {
+              KnowledgeCheck.show('exp1', 
+                'Which command properly formats the KRaft storage directory using a cluster UUID?', 
+                [
+                    'kafka-storage.bat format -c config\\\\server.properties', 
+                    'kafka-server-start.bat --format', 
+                    'kafka-storage.bat format -t &lt;UUID&gt; -c config\\\\server.properties'
+                ], 
+                2);
+          }, 1000);
+      }
+    }
+
+    function processCmd(cmd) {
+      if (!cmd) return;
+      appendLine(`C:\\kafka4.3.1> ${cmd}`, 'term-cmd');
+
+      if (cmd.trim() === 'kafka-storage.bat random-uuid') {
+        generatedUuid = lab.generateClusterId();
+        appendLine(generatedUuid, 'term-success');
+        appendLine('✓ Copy this UUID and use it with the format command.', 'term-info');
+        markStep('step-uuid');
+      }
+      else if (cmd.trim().startsWith('kafka-storage.bat format')) {
+        const parts = cmd.split('-t');
+        const uuid = parts.length > 1 ? parts[1].trim().split(' ')[0] : null;
+        if (!uuid || uuid === '<UUID>') {
+          appendLine('ERROR: Missing UUID. Use: kafka-storage.bat format -t <YOUR_UUID> -c config\\server.properties', 'term-error');
+          return;
+        }
+        const res = lab.formatStorage(uuid);
+        if (res.success) {
+          appendLine(res.output, 'term-success');
+          markStep('step-format');
+        } else {
+          appendLine(res.error, 'term-error');
+        }
+      }
+      else if (cmd.trim().startsWith('kafka-server-start.bat')) {
+        const res = lab.startBroker();
+        if (res.success) {
+          res.logs.forEach(l => appendLine(l, 'term-info'));
+          appendLine('[KafkaServer id=1] STARTED successfully.', 'term-success');
+          const badge = document.getElementById('status-badge');
+          badge.textContent = 'Online';
+          badge.style.cssText = 'background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.4);font-size:0.625rem;padding:0.125rem 0.5rem;border-radius:0.25rem;font-weight:700;text-transform:uppercase';
+          markStep('step-start');
+        } else {
+          appendLine(res.error, 'term-error');
+        }
+      }
+      else {
+        appendLine(`'${cmd}' is not recognized as an internal or external command.`, 'term-error');
+      }
+    }
+
+    function handleTerminal1(e) {
+      if (e.key === 'Enter') {
+        const cmd = e.target.value.trim();
+        e.target.value = '';
+        processCmd(cmd);
+      }
+    }
+
+    function runQuick(action) {
+      if (action === 'uuid') {
+        processCmd('kafka-storage.bat random-uuid');
+      } else if (action === 'format') {
+        if (!generatedUuid) {
+          appendLine('Generate a UUID first (Step 1)!', 'term-warning');
+          return;
+        }
+        processCmd(`kafka-storage.bat format -t ${generatedUuid} -c config\\server.properties`);
+      } else if (action === 'start') {
+        processCmd('kafka-server-start.bat config\\server.properties');
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Experiment 2: Core Pipeline | Kafka Virtual Lab</title>
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#4f46e5",
+            "primary-dark": "#3730a3",
+            "background-dark": "#0f172a",
+            "card-dark": "#1e293b",
+            "text-dark": "#94a3b8"
+          },
+          fontFamily: {
+            display: ["Roboto", "sans-serif"],
+            body: ["Inter", "sans-serif"],
+            mono: ["Fira Code", "monospace"]
+          },
+        },
+      },
+    };
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <link rel="stylesheet" href="css/custom.css">
+
+  <style>
+    html, body { height: 100%; overflow: hidden; }
+    .split-guide { overflow-y: auto; }
+    .sandbox-pane { overflow-y: auto; }
+
+    /* Make terminals fill available height in the right pane */
+    .term-flex { display: flex; flex-direction: column; min-height: 0; }
+    .terminal-body-exp {
+      flex: 1;
+      overflow-y: auto;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.75rem;
+      line-height: 1.5;
+      padding: 0.75rem;
+      min-height: 100px;
+    }
+
+    .step-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 26px; height: 26px; border-radius: 50%;
+      background: rgba(79,70,229,0.2); color: #818cf8;
+      font-weight: 700; font-size: 0.75rem; flex-shrink: 0;
+    }
+    .mission-step { transition: all 0.3s ease; }
+    .mission-step.done { background: rgba(16,185,129,0.1) !important; border-color: rgba(16,185,129,0.4) !important; }
+    .mission-step.done .step-icon { color: #10b981 !important; }
+  </style>
+</head>
+
+<body class="bg-background-dark font-display text-slate-100 antialiased h-screen">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-6 py-3 bg-emerald-700 shadow-lg sticky top-0 z-50 h-14">
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined !text-2xl text-white">lan</span>
+      <div>
+        <h1 class="text-lg font-bold text-white">Experiment 2: Core Messaging Pipeline</h1>
+        <p class="text-xs text-emerald-100 font-normal">Topic Creation · Console Producer · Console Consumer</p>
+      </div>
+    </div>
+    <a href="experiments.html" class="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-semibold transition text-white">
+      <span class="material-symbols-outlined !text-base">arrow_back</span>
+      <span>Back to Experiments</span>
+    </a>
+  </header>
+
+  <!-- Split Screen -->
+  <div class="flex" style="height: calc(100vh - 3.5rem);">
+
+    <!-- LEFT PANE: Guide -->
+    <div class="split-guide w-2/5 h-full bg-background-dark border-r border-slate-800 p-6">
+
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold uppercase tracking-wider mb-4">
+        Distributed Streaming
+      </div>
+
+      <h2 class="text-2xl font-extrabold text-white mb-3">Producer → Topic → Consumer</h2>
+      <p class="text-text-dark font-body text-sm leading-relaxed mb-5">
+        With the broker running, create a <strong class="text-white">Topic</strong> and wire up a Producer on Machine 2 and a Consumer on Machine 3 to see real-time message flow.
+      </p>
+
+      <!-- Aim -->
+      <div class="bg-emerald-500/5 border border-emerald-500/30 rounded-2xl p-5 mb-6">
+        <h3 class="text-base font-bold text-emerald-400 flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined !text-lg">flag</span> Aim
+        </h3>
+        <p class="text-sm text-slate-300 font-body leading-relaxed">
+          Design a distributed pipeline: Machine 1 (Broker), Machine 2 (Producer), Machine 3 (Consumer). Understand how <code>advertised.listeners</code> and firewall rules affect cross-machine connectivity.
+        </p>
+      </div>
+
+      <!-- Theory & Diagram -->
+      <div class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-5 mb-6">
+        <h3 class="text-base font-bold text-slate-200 flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined !text-lg text-cyan-400">route</span>
+          Theory: The Data Pipeline
+        </h3>
+        <p class="text-sm text-slate-400 font-body leading-relaxed mb-4">
+          Kafka decouples applications. Producers append records to the end of a Topic, and Consumers read those records sequentially from an offset. They operate completely independently of one another.
+        </p>
+        
+        <!-- Pipeline Diagram -->
+        <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 flex flex-col items-center gap-3 font-mono text-xs">
+          
+          <div class="flex items-center gap-3 w-full">
+            <!-- Producer -->
+            <div class="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 flex flex-col items-center flex-1">
+              <span class="material-symbols-outlined text-amber-400 !text-xl mb-2">upload</span>
+              <span class="text-amber-300 font-bold">Producer</span>
+            </div>
+            
+            <div class="text-slate-500">
+              <span class="material-symbols-outlined !text-xl">arrow_right_alt</span>
+            </div>
+
+            <!-- Topic -->
+            <div class="bg-indigo-500/10 border border-indigo-500/30 rounded-lg p-3 flex flex-col items-center flex-[2] relative overflow-hidden">
+              <span class="text-indigo-300 font-bold mb-2">Topic (Queue)</span>
+              <div class="flex gap-2 w-full justify-start">
+                <div class="w-6 h-6 bg-indigo-500/30 rounded flex items-center justify-center text-indigo-200 font-bold">0</div>
+                <div class="w-6 h-6 bg-indigo-500/30 rounded flex items-center justify-center text-indigo-200 font-bold">1</div>
+                <div class="w-6 h-6 bg-indigo-500/30 rounded flex items-center justify-center text-indigo-200 font-bold">2</div>
+              </div>
+            </div>
+
+            <div class="text-slate-500">
+              <span class="material-symbols-outlined !text-xl">arrow_right_alt</span>
+            </div>
+            
+            <!-- Consumer -->
+            <div class="bg-fuchsia-500/10 border border-fuchsia-500/30 rounded-lg p-3 flex flex-col items-center flex-1">
+              <span class="material-symbols-outlined text-fuchsia-400 !text-xl mb-2">download</span>
+              <span class="text-fuchsia-300 font-bold">Consumer</span>
+            </div>
+          </div>
+          <div class="text-slate-500 italic mt-2 text-[10px]">Messages flow left to right asynchronously</div>
+        </div>
+      </div>
+
+      <!-- Mission Checklist -->
+      <div class="bg-card-dark rounded-xl border border-slate-700 p-4 mb-6 shadow-md">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <span class="material-symbols-outlined !text-base text-primary">checklist</span>
+            Mission Milestones
+          </h3>
+          <span id="progress-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-indigo-300 font-mono font-bold">0 / 4 Done</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <div id="step-broker" class="mission-step flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 step-icon">radio_button_unchecked</span>
+            <span>1. Start Broker</span>
+          </div>
+          <div id="step-topic" class="mission-step flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 step-icon">radio_button_unchecked</span>
+            <span>2. Create Topic</span>
+          </div>
+          <div id="step-consumer" class="mission-step flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 step-icon">radio_button_unchecked</span>
+            <span>3. Launch Consumer</span>
+          </div>
+          <div id="step-messages" class="mission-step flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 step-icon">radio_button_unchecked</span>
+            <span>4. Send Messages</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Steps -->
+      <h3 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+        <span class="material-symbols-outlined !text-base text-emerald-500">format_list_numbered</span>
+        Commands — Follow Order!
+      </h3>
+
+      <div class="space-y-4 font-body">
+        <div class="flex gap-4 items-start">
+          <div class="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">1</div>
+          <div>
+            <h4 class="font-semibold text-white text-sm mb-1">Start Broker (Terminal 1)</h4>
+            <pre class="bg-slate-950 text-emerald-400 p-2 rounded text-sm font-mono mt-1 whitespace-pre-wrap break-all border border-emerald-900/30">kafka-storage.bat random-uuid</pre>
+            <pre class="bg-slate-950 text-emerald-400 p-2 rounded text-sm font-mono mt-1 whitespace-pre-wrap break-all border border-emerald-900/30">kafka-storage.bat format -t &lt;UUID&gt; -c config\server.properties</pre>
+            <pre class="bg-slate-950 text-emerald-400 p-2 rounded text-sm font-mono mt-1 whitespace-pre-wrap break-all border border-emerald-900/30">kafka-server-start.bat config\server.properties</pre>
+            <p class="text-sm text-slate-400 mt-2">Or just click the green ⚡ Auto-Boot button.</p>
+          </div>
+        </div>
+
+        <div class="flex gap-4 items-start">
+          <div class="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">2</div>
+          <div>
+            <h4 class="font-semibold text-white text-sm mb-1">Create Topic (Terminal 2)</h4>
+            <pre class="bg-slate-950 text-emerald-400 p-2 rounded text-sm font-mono mt-1 whitespace-pre-wrap break-all border border-emerald-900/30">kafka-topics.bat --create --topic fsd-topic --bootstrap-server 192.168.1.10:9092</pre>
+          </div>
+        </div>
+
+        <div class="flex gap-4 items-start">
+          <div class="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">3</div>
+          <div>
+            <h4 class="font-semibold text-white text-sm mb-1">Start Consumer (Terminal 3)</h4>
+            <pre class="bg-slate-950 text-emerald-400 p-2 rounded text-sm font-mono mt-1 whitespace-pre-wrap break-all border border-emerald-900/30">kafka-console-consumer.bat --topic fsd-topic --bootstrap-server 192.168.1.10:9092 --from-beginning</pre>
+          </div>
+        </div>
+
+        <div class="flex gap-4 items-start">
+          <div class="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">4</div>
+          <div>
+            <h4 class="font-semibold text-white text-sm mb-1">Start Producer &amp; Send (Terminal 2)</h4>
+            <pre class="bg-slate-950 text-emerald-400 p-2 rounded text-sm font-mono mt-1 whitespace-pre-wrap break-all border border-emerald-900/30">kafka-console-producer.bat --topic fsd-topic --bootstrap-server 192.168.1.10:9092</pre>
+            <p class="text-sm text-slate-400 mt-2">Then type any message and press Enter!</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex gap-3">
+        <span class="material-symbols-outlined text-amber-400 flex-shrink-0">lightbulb</span>
+        <p class="text-sm text-amber-300 font-body">Messages typed in Terminal 2 will appear <strong>instantly</strong> in Terminal 3 once the consumer is running!</p>
+      </div>
+    </div>
+
+    <!-- RIGHT PANE: 3-Terminal Sandbox -->
+    <div class="sandbox-pane w-3/5 h-full bg-slate-950 p-4 flex flex-col gap-4">
+
+      <!-- Terminal 1: Broker (compact) -->
+      <div class="terminal-window term-flex flex-shrink-0" style="max-height: 180px;">
+        <div class="terminal-header">
+          <div class="flex items-center gap-2">
+            <div class="terminal-controls">
+              <span class="terminal-dot dot-red"></span>
+              <span class="terminal-dot dot-yellow"></span>
+              <span class="terminal-dot dot-green"></span>
+            </div>
+            <span class="text-[11px] font-bold text-slate-300 font-mono ml-2">Terminal 1 — Machine 1 Broker (192.168.1.10)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="broker-status" class="text-[9px] px-2 py-0.5 rounded font-bold uppercase" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4)">Offline</span>
+            <button onclick="autoStartBroker()" class="px-2 py-0.5 bg-emerald-700 hover:bg-emerald-600 text-white text-[9px] font-bold rounded transition">⚡ Auto-Boot</button>
+          </div>
+        </div>
+        <div class="terminal-body-exp" id="term1-body" style="min-height:50px;">
+          <div class="term-line term-info">KRaft Broker — Ready to initialize.</div>
+        </div>
+        <div class="p-2 bg-slate-900 border-t border-slate-800">
+          <div class="terminal-prompt-line">
+            <span class="term-cmd font-mono text-xs mt-1">C:\kafka4.3.1&gt;</span>
+            <input type="text" id="term1-input" class="terminal-input bg-slate-950/80 border border-slate-700/60 rounded px-2 py-1 text-slate-200 focus:ring-1 focus:ring-primary focus:border-primary w-full" placeholder="kafka-storage.bat / kafka-server-start.bat ..." onkeydown="handleTerm1(event)" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Terminals 2 & 3 side-by-side -->
+      <div class="flex gap-3 flex-1 min-h-0">
+
+        <!-- Terminal 2: Producer -->
+        <div class="terminal-window term-flex flex-1">
+          <div class="terminal-header">
+            <div class="flex items-center gap-2">
+              <div class="terminal-controls">
+                <span class="terminal-dot dot-red"></span>
+                <span class="terminal-dot dot-yellow"></span>
+                <span class="terminal-dot dot-green"></span>
+              </div>
+              <span class="text-[11px] font-bold text-slate-300 font-mono ml-2">Terminal 2 — Producer (192.168.1.20)</span>
+            </div>
+            <span class="text-[10px] px-1.5 py-0.5 rounded badge-producer font-bold uppercase">Producer</span>
+          </div>
+          <div class="terminal-body-exp" id="term2-body">
+            <div class="term-line term-info">Remote Kafka Producer Node on LAN.</div>
+            <div class="term-line term-info">Ready to create topics and publish events.</div>
+          </div>
+          <div class="p-2 bg-slate-900 border-t border-slate-800">
+            <div class="terminal-prompt-line">
+              <span id="t2-prompt" class="term-cmd font-mono text-xs mt-1">C:\kafka4.3.1&gt;</span>
+              <input type="text" id="term2-input" class="terminal-input bg-slate-950/80 border border-slate-700/60 rounded px-2 py-1 text-slate-200 focus:ring-1 focus:ring-primary focus:border-primary w-full" placeholder="kafka-topics.bat / kafka-console-producer.bat ..." onkeydown="handleTerm2(event)" />
+            </div>
+            <div class="flex flex-wrap gap-1 mt-1.5">
+              <button onclick="quickTerm2('topic')" class="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 text-[9px] font-mono text-indigo-300 rounded border border-slate-700 transition">create topic</button>
+              <button onclick="quickTerm2('producer')" class="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 text-[9px] font-mono text-emerald-400 rounded border border-slate-700 transition font-bold">start producer</button>
+              <button onclick="quickTerm2('msg')" class="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 text-[9px] font-mono text-amber-300 rounded border border-slate-700 transition">send sample msg</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terminal 3: Consumer -->
+        <div class="terminal-window term-flex flex-1">
+          <div class="terminal-header">
+            <div class="flex items-center gap-2">
+              <div class="terminal-controls">
+                <span class="terminal-dot dot-red"></span>
+                <span class="terminal-dot dot-yellow"></span>
+                <span class="terminal-dot dot-green"></span>
+              </div>
+              <span class="text-[11px] font-bold text-slate-300 font-mono ml-2">Terminal 3 — Consumer (192.168.1.30)</span>
+            </div>
+            <span class="text-[10px] px-1.5 py-0.5 rounded badge-consumer font-bold uppercase">Consumer</span>
+          </div>
+          <div class="terminal-body-exp" id="term3-body">
+            <div class="term-line term-info">Remote Kafka Consumer Node on LAN.</div>
+            <div class="term-line term-info">Ready to subscribe to topic event feeds.</div>
+          </div>
+          <div class="p-2 bg-slate-900 border-t border-slate-800">
+            <div class="terminal-prompt-line">
+              <span class="term-cmd font-mono text-xs mt-1">C:\kafka4.3.1&gt;</span>
+              <input type="text" id="term3-input" class="terminal-input bg-slate-950/80 border border-slate-700/60 rounded px-2 py-1 text-slate-200 focus:ring-1 focus:ring-primary focus:border-primary w-full" placeholder="kafka-console-consumer.bat ..." onkeydown="handleTerm3(event)" />
+            </div>
+            <div class="flex flex-wrap gap-1 mt-1.5">
+              <button onclick="quickTerm3('consumer')" class="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 text-[9px] font-mono text-amber-400 rounded border border-slate-700 transition font-bold">start consumer</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="js/simulator.js"></script>
+  <script src="js/progress-tracker.js"></script>
+  <script>
+    const lab = new KafkaVirtualLab();
+    let doneCount = 0;
+
+    function logTo(termId, text, cls = '') {
+      const b = document.getElementById(termId);
+      const d = document.createElement('div');
+      d.className = `term-line ${cls}`;
+      d.textContent = text;
+      b.appendChild(d);
+      b.scrollTop = b.scrollHeight;
+    }
+
+    function markStep(stepId) {
+      if (stepId === 'step-msg') stepId = 'step-messages';
+      const el = document.getElementById(stepId);
+      if (!el || el.classList.contains('done')) return;
+      el.classList.add('done');
+      el.querySelector('.step-icon').textContent = 'check_circle';
+      doneCount++;
+      document.getElementById('progress-badge').textContent = `${doneCount} / 4 Done`;
+      
+      if (doneCount === 4) {
+          setTimeout(() => {
+              KnowledgeCheck.show('exp2', 
+                'What is the purpose of the --bootstrap-server flag when running the console producer?', 
+                [
+                    'It tells the producer which topic to create', 
+                    'It specifies the initial broker(s) to connect to in the cluster', 
+                    'It enables bootstrap styling in the console output',
+                    'It formats the cluster storage'
+                ], 
+                1);
+          }, 1000);
+      }
+    }
+
+    function autoStartBroker() {
+      lab.formatStorage('AUTO-BOOT-UUID-001');
+      const res = lab.startBroker();
+      if (res.success) {
+        res.logs.forEach(l => logTo('term1-body', l, 'term-info'));
+        logTo('term1-body', '[KafkaServer id=1] STARTED.', 'term-success');
+        const b = document.getElementById('broker-status');
+        b.textContent = 'Online';
+        b.style.cssText = 'background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.4);font-size:0.5625rem;padding:0.125rem 0.5rem;border-radius:0.25rem;font-weight:700;text-transform:uppercase';
+        markStep('step-broker');
+      }
+    }
+
+    function handleTerm1(e) {
+      if (e.key !== 'Enter') return;
+      const cmd = e.target.value.trim(); e.target.value = '';
+      if (!cmd) return;
+      logTo('term1-body', `C:\\kafka4.3.1> ${cmd}`, 'term-cmd');
+
+      if (cmd === 'kafka-storage.bat random-uuid') {
+        const uuid = lab.generateClusterId();
+        logTo('term1-body', uuid, 'term-success');
+      } 
+      else if (cmd.startsWith('kafka-storage.bat format')) {
+        const parts = cmd.split('-t');
+        let uuid = parts.length > 1 ? parts[1].trim().split(' ')[0] : null;
+        if (uuid) {
+          const res = lab.formatStorage(uuid);
+          logTo('term1-body', res.success ? res.output : res.error, res.success ? 'term-success' : 'term-error');
+        } else {
+          logTo('term1-body', "Error: Missing cluster ID.", 'term-error');
+        }
+      }
+      else if (cmd.startsWith('kafka-server-start.bat')) {
+        const res = lab.startBroker();
+        if (res.success) {
+          res.logs.forEach(l => logTo('term1-body', l, 'term-info'));
+          logTo('term1-body', '[KafkaServer id=1] STARTED.', 'term-success');
+          const b = document.getElementById('broker-status');
+          b.textContent = 'Online';
+          b.style.cssText = 'background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.4);font-size:0.5625rem;padding:0.125rem 0.5rem;border-radius:0.25rem;font-weight:700;text-transform:uppercase';
+          markStep('step-broker');
+        } else {
+          logTo('term1-body', res.error, 'term-error');
+        }
+      }
+      else {
+        logTo('term1-body', `'${cmd}' is not recognized.`, 'term-error');
+      }
+    }
+
+    // Terminal 2 logic
+    function handleTerm2(e) {
+      if (e.key !== 'Enter') return;
+      const cmd = e.target.value.trim(); e.target.value = '';
+      if (!cmd) return;
+      logTo('term2-body', `C:\\kafka4.3.1> ${cmd}`, 'term-cmd');
+
+      if (lab.machine2.isProducing) {
+        const r = lab.sendMessage(cmd);
+        if (!r.success) logTo('term2-body', r.error, 'term-error');
+        return;
+      }
+
+      if (cmd.includes('kafka-topics.bat') && cmd.includes('--create')) {
+        const topicMatch = cmd.match(/--topic\s+(\S+)/);
+        const topicName = topicMatch ? topicMatch[1] : 'fsd-topic';
+        const res = lab.createTopic(topicName, '192.168.1.10:9092', 1, 1);
+        logTo('term2-body', res.success ? res.output : res.error, res.success ? 'term-success' : 'term-error');
+        if (res.success) markStep('step-topic');
+      }
+      else if (cmd.includes('kafka-console-producer.bat')) {
+        const topicMatch = cmd.match(/--topic\s+(\S+)/);
+        const topicName = topicMatch ? topicMatch[1] : 'fsd-topic';
+        const res = lab.startProducer(topicName, '192.168.1.10:9092');
+        if (res.success) {
+          logTo('term2-body', `[Producer] Connected to fsd-topic on 192.168.1.10:9092. Type messages below:`, 'term-success');
+          document.getElementById('t2-prompt').textContent = '>';
+        } else {
+          logTo('term2-body', res.error, 'term-error');
+        }
+      }
+      else {
+        logTo('term2-body', `'${cmd}' is not recognized.`, 'term-error');
+      }
+    }
+
+    function quickTerm2(action) {
+      const input = document.getElementById('term2-input');
+      if (action === 'topic') {
+        input.value = 'kafka-topics.bat --create --topic fsd-topic --bootstrap-server 192.168.1.10:9092';
+      } else if (action === 'producer') {
+        input.value = 'kafka-console-producer.bat --topic fsd-topic --bootstrap-server 192.168.1.10:9092';
+      } else if (action === 'msg') {
+        input.value = 'Sensor-Temp: 24.5C | Unit-7 | ts:' + Date.now();
+      }
+      input.focus();
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    }
+
+    // Terminal 3 logic
+    function handleTerm3(e) {
+      if (e.key !== 'Enter') return;
+      const cmd = e.target.value.trim(); e.target.value = '';
+      if (!cmd) return;
+      logTo('term3-body', `C:\\kafka4.3.1> ${cmd}`, 'term-cmd');
+
+      if (cmd.includes('kafka-console-consumer.bat')) {
+        const topicMatch = cmd.match(/--topic\s+(\S+)/);
+        const topicName = topicMatch ? topicMatch[1] : 'fsd-topic';
+        const fromBeginning = cmd.includes('--from-beginning');
+        const res = lab.startConsumer(topicName, '192.168.1.10:9092', fromBeginning);
+        if (res.success) {
+          logTo('term3-body', `[Consumer] Subscribed to '${topicName}'. Waiting for messages...`, 'term-success');
+          if (res.initialMessages.length > 0) {
+            res.initialMessages.forEach(m => logTo('term3-body', m.value, 'term-highlight'));
+          }
+          markStep('step-consumer');
+        } else {
+          logTo('term3-body', res.error, 'term-error');
+        }
+      } else {
+        logTo('term3-body', `'${cmd}' is not recognized.`, 'term-error');
+      }
+    }
+
+    function quickTerm3(action) {
+      const input = document.getElementById('term3-input');
+      if (action === 'consumer') {
+        input.value = 'kafka-console-consumer.bat --topic fsd-topic --bootstrap-server 192.168.1.10:9092 --from-beginning';
+      }
+      input.focus();
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    }
+
+    // Live message delivery to terminal 3
+    lab.on('packetFlow', (data) => {
+      // Simulate network latency then deliver the packet
+      setTimeout(() => {
+        if (data.onDelivered) data.onDelivered();
+      }, 300);
+    });
+
+    lab.on('messageConsumed', (evt) => {
+      // The event object shape was updated to { consumerId, event }
+      const msgValue = evt.event ? evt.event.value : evt.value;
+      logTo('term3-body', msgValue, 'term-highlight');
+      markStep('step-msg');
+    });
+  </script>
+</body>
+</html>

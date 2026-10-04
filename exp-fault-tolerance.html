@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kafka Virtual Lab - Experiment 4</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <script src="js/simulator-cluster.js"></script>
+  <script src="js/progress-tracker.js"></script>
+  <script src="js/tailwind-config.js"></script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    .font-body { font-family: 'Inter', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+    body {
+      background-color: #020617; /* Slate 950 */
+      color: #f8fafc;
+      overflow: hidden;
+    }
+
+    .bg-card-dark { background-color: #0f172a; } /* Slate 900 */
+    .bg-terminal { background-color: #09090b; } /* Zinc 950 */
+    .text-primary { color: #f43f5e; } /* Rose 500 */
+
+    .glow-card {
+      position: relative;
+    }
+    .glow-card::before {
+      content: '';
+      position: absolute;
+      top: -1px; left: -1px; right: -1px; bottom: -1px;
+      border-radius: 12px;
+      background: linear-gradient(45deg, rgba(244,63,94,0.3), transparent, rgba(244,63,94,0.1));
+      z-index: -1;
+      opacity: 0.5;
+    }
+
+    .sandbox-pane { overflow-y: auto; }
+
+    .terminal-window {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #1e293b; /* Slate 800 */
+      border-radius: 0.5rem;
+      overflow: hidden;
+      background: #09090b;
+      height: 100%;
+    }
+    .terminal-header {
+      background: #0f172a;
+      border-bottom: 1px solid #1e293b;
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .terminal-controls {
+      display: flex;
+      gap: 0.375rem;
+    }
+    .terminal-dot {
+      width: 0.75rem;
+      height: 0.75rem;
+      border-radius: 50%;
+    }
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #f59e0b; }
+    .dot-green { background: #10b981; }
+    .terminal-body {
+      flex-grow: 1;
+      padding: 0.5rem;
+      overflow-y: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      line-height: 1.4;
+      background: #000;
+      color: #a1a1aa;
+    }
+    .term-line {
+      margin-bottom: 0.25rem;
+      word-break: break-all;
+    }
+    .term-prompt { color: #10b981; font-weight: bold; flex-shrink: 0; }
+    .term-cmd { color: #facc15; }
+    .term-info { color: #60a5fa; }
+    .term-success { color: #4ade80; }
+    .term-error { color: #f87171; }
+    .term-output { color: #a1a1aa; }
+    .term-highlight { color: #f43f5e; font-weight: bold; }
+
+    .step-icon.active { color: #f43f5e; font-variation-settings: 'FILL' 1; }
+    
+    .quick-cmd {
+      transition: all 0.2s ease;
+    }
+    .quick-cmd:hover {
+      background: rgba(244,63,94,0.15);
+      border-color: #f43f5e;
+      color: #f43f5e;
+    }
+    
+    input.bg-transparent:focus {
+      outline: none;
+      border-color: #f43f5e;
+      box-shadow: 0 0 0 1px rgba(244,63,94,0.3);
+    }
+  </style>
+</head>
+<body class="h-screen flex flex-col font-body">
+
+  <!-- Header -->
+  <header class="bg-card-dark border-b border-slate-800 h-16 flex items-center px-6 justify-between flex-shrink-0 relative z-10 shadow-md">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-rose-500 rounded-lg flex items-center justify-center shadow-lg shadow-rose-500/20">
+        <span class="material-symbols-outlined text-white !text-xl">dns</span>
+      </div>
+      <div>
+        <h1 class="text-white font-bold text-lg leading-tight">Kafka Virtual Lab</h1>
+        <p class="text-[10px] text-slate-400 font-mono tracking-widest uppercase">Exp 04 // Cluster Fault Tolerance</p>
+      </div>
+    </div>
+    <a href="experiments.html" class="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors bg-slate-800/50 hover:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">
+      <span class="material-symbols-outlined !text-sm">arrow_back</span>
+      <span>Back to Catalog</span>
+    </a>
+  </header>
+
+  <div class="flex-grow flex overflow-hidden">
+    <!-- Left Pane: Guide & Instructions -->
+    <div class="w-2/5 bg-[#090b14] border-r border-slate-800 flex flex-col overflow-y-auto flex-shrink-0 z-10 shadow-xl">
+      <div class="p-6">
+        
+        <div class="mb-6 bg-rose-500/5 border border-rose-500/30 rounded-2xl p-5">
+          <h2 class="text-rose-500 font-bold text-xs tracking-wider uppercase mb-1">Aim</h2>
+          <h3 class="text-xl font-bold text-white mb-2 leading-tight">
+            Observe Leader Election
+          </h3>
+          <p class="text-sm text-slate-300 font-body leading-relaxed">
+            Start a 3-node Kafka cluster. Create a topic with a Replication Factor of 3. Then, crash the Leader Broker and watch how the remaining nodes elect a new leader without dropping data!
+          </p>
+        </div>
+
+        <!-- Theory & Diagram -->
+        <div class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-5 mb-6">
+          <h3 class="text-base font-bold text-slate-200 flex items-center gap-2 mb-3">
+            <span class="material-symbols-outlined !text-lg text-rose-400">gpp_good</span>
+            Theory: High Availability (HA)
+          </h3>
+          <p class="text-sm text-slate-400 font-body leading-relaxed mb-4">
+            Kafka clusters provide fault tolerance through data replication. A topic with a Replication Factor of 3 stores copies of every message on 3 different brokers. One broker acts as the <strong>Leader</strong>, serving all read/write requests, while the other two are <strong>In-Sync Replicas (ISR)</strong>. If the leader crashes, the cluster instantly promotes a new leader.
+          </p>
+          
+          <!-- HA Diagram -->
+          <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 flex justify-center items-center font-mono text-xs">
+            <div class="w-full flex flex-col gap-3 relative">
+              <!-- Client -->
+              <div class="mx-auto bg-slate-800 border border-slate-700 rounded p-2 text-center w-32 text-slate-300 z-10 relative font-semibold">
+                Producer
+                <div class="absolute -bottom-5 left-1/2 -translate-x-1/2 w-0.5 h-5 bg-rose-500/50"></div>
+              </div>
+              
+              <div class="h-3"></div> <!-- spacer -->
+
+              <!-- Cluster -->
+              <div class="border border-rose-500/20 bg-rose-500/5 rounded-lg p-3 flex gap-3">
+                <!-- Broker 1 -->
+                <div id="diag-b1" class="flex-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-center text-slate-400 relative transition-all duration-300">
+                  <div id="diag-badge-1" class="absolute -top-3 -right-3 bg-rose-500 text-white text-[10px] px-2 py-0.5 font-bold rounded shadow-lg hidden">LEADER</div>
+                  <span class="material-symbols-outlined !text-xl mb-1">dns</span><br/>Broker 1
+                  <div id="diag-sub-1" class="mt-2 text-[10px] text-slate-500 uppercase font-bold hidden">Follower</div>
+                </div>
+                <!-- Broker 2 -->
+                <div id="diag-b2" class="flex-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-center text-slate-400 relative transition-all duration-300">
+                  <div id="diag-badge-2" class="absolute -top-3 -right-3 bg-rose-500 text-white text-[10px] px-2 py-0.5 font-bold rounded shadow-lg hidden">LEADER</div>
+                  <span class="material-symbols-outlined !text-xl mb-1">dns</span><br/>Broker 2
+                  <div id="diag-sub-2" class="mt-2 text-[10px] text-slate-500 uppercase font-bold hidden">Follower</div>
+                </div>
+                <!-- Broker 3 -->
+                <div id="diag-b3" class="flex-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-center text-slate-400 relative transition-all duration-300">
+                  <div id="diag-badge-3" class="absolute -top-3 -right-3 bg-rose-500 text-white text-[10px] px-2 py-0.5 font-bold rounded shadow-lg hidden">LEADER</div>
+                  <span class="material-symbols-outlined !text-xl mb-1">dns</span><br/>Broker 3
+                  <div id="diag-sub-3" class="mt-2 text-[10px] text-slate-500 uppercase font-bold hidden">Follower</div>
+                </div>
+              </div>
+              <div class="text-center text-slate-500 italic mt-2 text-[10px]">Replication Factor = 3</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mission Checklist -->
+        <div class="bg-card-dark rounded-xl border border-slate-700 p-4 mb-6 shadow-md">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <span class="material-symbols-outlined !text-base text-rose-500">checklist</span>
+              Mission Milestones
+            </h3>
+            <span id="progress-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-mono font-bold">0 / 5 Done</span>
+          </div>
+          <div class="grid grid-cols-1 gap-2 text-sm">
+            <div id="step-broker" class="flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+              <span class="material-symbols-outlined !text-base text-slate-600 step-icon">radio_button_unchecked</span>
+              <span>1. All 3 Brokers Online</span>
+            </div>
+            <div id="step-topic" class="flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+              <span class="material-symbols-outlined !text-base text-slate-600 step-icon">radio_button_unchecked</span>
+              <span>2. Replicated Topic Created (RF=3)</span>
+            </div>
+            <div id="step-messages" class="flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+              <span class="material-symbols-outlined !text-base text-slate-600 step-icon">radio_button_unchecked</span>
+              <span>3. Producer Sent Messages</span>
+            </div>
+            <div id="step-crash" class="flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+              <span class="material-symbols-outlined !text-base text-slate-600 step-icon">radio_button_unchecked</span>
+              <span>4. Leader Broker Crashed</span>
+            </div>
+            <div id="step-election" class="flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+              <span class="material-symbols-outlined !text-base text-slate-600 step-icon">radio_button_unchecked</span>
+              <span>5. New Leader Elected from ISR</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Steps -->
+        <h3 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+          <span class="material-symbols-outlined !text-base text-rose-500">format_list_numbered</span>
+          Commands
+        </h3>
+
+        <div class="space-y-4 font-body">
+          <div class="flex gap-4 items-start">
+            <div class="flex-shrink-0 w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-sm">1</div>
+            <div>
+              <h4 class="font-semibold text-white text-sm mb-1">Create Topic (Terminal 4)</h4>
+              <pre class="bg-slate-950 text-rose-400 p-2 rounded text-sm font-mono mt-1 whitespace-pre-wrap break-all border border-rose-900/30">kafka-topics.bat --create --topic ha-topic --partitions 1 --replication-factor 3</pre>
+              <p class="text-sm text-slate-400 mt-2">Make sure all 3 brokers are running first (click Start Broker on all).</p>
+            </div>
+          </div>
+
+          <div class="flex gap-4 items-start">
+            <div class="flex-shrink-0 w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-sm">2</div>
+            <div>
+              <h4 class="font-semibold text-white text-sm mb-1">View Details (Terminal 4)</h4>
+              <pre class="bg-slate-950 text-rose-400 p-2 rounded text-sm font-mono mt-1 whitespace-pre-wrap break-all border border-rose-900/30">kafka-topics.bat --describe --topic ha-topic</pre>
+              <p class="text-sm text-slate-400 mt-2">Check the output to see who is the Leader and the ISR.</p>
+            </div>
+          </div>
+
+          <div class="flex gap-4 items-start">
+            <div class="flex-shrink-0 w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-sm">3</div>
+            <div>
+              <h4 class="font-semibold text-white text-sm mb-1">Send Messages (Terminal 4)</h4>
+              <pre class="bg-slate-950 text-rose-400 p-2 rounded text-sm font-mono mt-1 whitespace-pre-wrap break-all border border-rose-900/30">kafka-console-producer.bat --topic ha-topic</pre>
+            </div>
+          </div>
+
+          <div class="flex gap-4 items-start">
+            <div class="flex-shrink-0 w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-sm">4</div>
+            <div>
+              <h4 class="font-semibold text-white text-sm mb-1">Crash the Leader</h4>
+              <p class="text-sm text-slate-400 mt-1">Look at the diagram to see which broker is the Leader. Click its <span class="bg-rose-900/50 border border-rose-700 text-rose-300 px-1 py-0.5 rounded text-xs">Crash</span> button.</p>
+            </div>
+          </div>
+          
+          <div class="flex gap-4 items-start">
+            <div class="flex-shrink-0 w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-sm">5</div>
+            <div>
+              <h4 class="font-semibold text-white text-sm mb-1">View Details Again (Terminal 4)</h4>
+              <pre class="bg-slate-950 text-rose-400 p-2 rounded text-sm font-mono mt-1 whitespace-pre-wrap break-all border border-rose-900/30">kafka-topics.bat --describe --topic ha-topic</pre>
+              <p class="text-sm text-slate-400 mt-2">A new leader was elected! Notice the ISR list updated.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-8 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex gap-3">
+          <span class="material-symbols-outlined text-amber-400 flex-shrink-0">lightbulb</span>
+          <p class="text-sm text-amber-300 font-body">As long as one replica from the ISR is alive, your data is safe and the cluster stays available!</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Right Pane: Terminals (2x2 Grid) -->
+    <div class="sandbox-pane w-3/5 h-full bg-[#020617] p-4 grid grid-cols-2 grid-rows-2 gap-4 relative">
+      
+      <!-- Terminal 1: Broker 1 -->
+      <div class="terminal-window glow-card">
+        <div class="terminal-header">
+          <div class="flex items-center gap-2">
+            <div class="terminal-controls">
+              <span class="terminal-dot dot-red"></span>
+              <span class="terminal-dot dot-yellow"></span>
+              <span class="terminal-dot dot-green"></span>
+            </div>
+            <span class="material-symbols-outlined !text-sm text-slate-400 ml-2">dns</span>
+            <span class="text-[11px] font-bold text-slate-300 font-mono">Node 1 (Broker 1)</span>
+            <span id="badge-broker1" class="hidden text-[9px] px-1.5 py-0.5 rounded font-bold ml-2">FOLLOWER</span>
+          </div>
+          <button id="btn-broker1" class="text-[10px] font-bold px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded transition-colors border border-slate-600">Start Broker</button>
+        </div>
+        <div class="terminal-body" id="term1-body">
+          <div class="term-line"><span class="term-output">Waiting for Broker 1 to start...</span></div>
+        </div>
+      </div>
+
+      <!-- Terminal 2: Broker 2 -->
+      <div class="terminal-window glow-card">
+        <div class="terminal-header">
+          <div class="flex items-center gap-2">
+            <div class="terminal-controls">
+              <span class="terminal-dot dot-red"></span>
+              <span class="terminal-dot dot-yellow"></span>
+              <span class="terminal-dot dot-green"></span>
+            </div>
+            <span class="material-symbols-outlined !text-sm text-slate-400 ml-2">dns</span>
+            <span class="text-[11px] font-bold text-slate-300 font-mono">Node 2 (Broker 2)</span>
+            <span id="badge-broker2" class="hidden text-[9px] px-1.5 py-0.5 rounded font-bold ml-2">FOLLOWER</span>
+          </div>
+          <button id="btn-broker2" class="text-[10px] font-bold px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded transition-colors border border-slate-600">Start Broker</button>
+        </div>
+        <div class="terminal-body" id="term2-body">
+          <div class="term-line"><span class="term-output">Waiting for Broker 2 to start...</span></div>
+        </div>
+      </div>
+
+      <!-- Terminal 3: Broker 3 -->
+      <div class="terminal-window glow-card">
+        <div class="terminal-header">
+          <div class="flex items-center gap-2">
+            <div class="terminal-controls">
+              <span class="terminal-dot dot-red"></span>
+              <span class="terminal-dot dot-yellow"></span>
+              <span class="terminal-dot dot-green"></span>
+            </div>
+            <span class="material-symbols-outlined !text-sm text-slate-400 ml-2">dns</span>
+            <span class="text-[11px] font-bold text-slate-300 font-mono">Node 3 (Broker 3)</span>
+            <span id="badge-broker3" class="hidden text-[9px] px-1.5 py-0.5 rounded font-bold ml-2">FOLLOWER</span>
+          </div>
+          <button id="btn-broker3" class="text-[10px] font-bold px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded transition-colors border border-slate-600">Start Broker</button>
+        </div>
+        <div class="terminal-body" id="term3-body">
+          <div class="term-line"><span class="term-output">Waiting for Broker 3 to start...</span></div>
+        </div>
+      </div>
+
+      <!-- Terminal 4: Client -->
+      <div class="terminal-window glow-card">
+        <div class="terminal-header">
+          <div class="flex items-center gap-2">
+            <div class="terminal-controls">
+              <span class="terminal-dot dot-red"></span>
+              <span class="terminal-dot dot-yellow"></span>
+              <span class="terminal-dot dot-green"></span>
+            </div>
+            <span class="material-symbols-outlined !text-sm text-slate-400 ml-2">terminal</span>
+            <span class="text-[11px] font-bold text-slate-300 font-mono">Machine 4 (Client)</span>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="quickCmd('create')" class="quick-cmd text-[10px] font-bold px-2 py-1 bg-transparent border border-slate-700 text-slate-400 rounded">Topic</button>
+            <button onclick="quickCmd('producer')" class="quick-cmd text-[10px] font-bold px-2 py-1 bg-transparent border border-slate-700 text-slate-400 rounded">Producer</button>
+          </div>
+        </div>
+        <div class="terminal-body" id="term4-body">
+          <div class="term-line"><span class="term-prompt">C:\kafka4.3.1&gt;</span><span class="term-cmd">_</span></div>
+        </div>
+        <div class="p-2 bg-slate-900 border-t border-slate-800 flex items-center gap-2">
+          <span class="term-cmd font-mono text-xs mt-1">C:\kafka4.3.1&gt;</span>
+          <input type="text" id="term4-input" class="bg-slate-950/80 border border-slate-700/60 rounded px-2 py-1 text-slate-200 font-mono text-xs focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500 w-full" placeholder="Type command here..." autocomplete="off">
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const lab = new KafkaClusterLab();
+    let completedSteps = 0;
+
+    function markStep(id) {
+      const el = document.getElementById(id);
+      if (el && !el.classList.contains('step-done')) {
+        el.classList.add('step-done');
+        el.classList.replace('text-slate-400', 'text-white');
+        const icon = el.querySelector('.step-icon');
+        icon.textContent = 'check_circle';
+        icon.classList.add('active');
+        icon.classList.replace('text-slate-600', 'text-rose-500');
+        
+        completedSteps++;
+        document.getElementById('progress-badge').textContent = `${completedSteps} / 5 Done`;
+
+        if (completedSteps === 5) {
+            setTimeout(() => {
+                KnowledgeCheck.show('exp4', 
+                  'When the Leader broker crashes in a replicated topic, what happens?', 
+                  [
+                      'The cluster stops accepting messages until the broker is manually restarted.', 
+                      'A new Leader is automatically elected from the In-Sync Replicas (ISR).', 
+                      'The topic is deleted to prevent data corruption.',
+                      'All consumers are instantly disconnected and must wait 5 minutes.'
+                  ], 
+                  1);
+            }, 1000);
+        }
+      }
+    }
+
+    lab.on('stepUpdated', (step) => {
+      if (step === 'allBrokersUp') markStep('step-broker');
+      if (step === 'topicCreated') markStep('step-topic');
+      if (step === 'messagesProduced') markStep('step-messages');
+      if (step === 'leaderCrashed') markStep('step-crash');
+      if (step === 'electionTriggered') markStep('step-election');
+    });
+
+    function logTo(termId, msg, typeClass = 'term-output') {
+      const tb = document.getElementById(termId);
+      const div = document.createElement('div');
+      div.className = 'term-line';
+      if (typeClass === 'term-cmd') {
+        div.innerHTML = `<span class="term-prompt">C:\\kafka4.3.1&gt;</span><span class="term-cmd">${msg}</span>`;
+      } else {
+        div.innerHTML = `<span class="${typeClass}">${msg}</span>`;
+      }
+      tb.appendChild(div);
+      tb.scrollTop = tb.scrollHeight;
+    }
+
+    function updateDiagram() {
+      [1, 2, 3].forEach(id => {
+        const diagBroker = document.getElementById(`diag-b${id}`);
+        const diagBadge = document.getElementById(`diag-badge-${id}`);
+        const diagSub = document.getElementById(`diag-sub-${id}`);
+
+        diagBroker.className = 'flex-1 rounded-lg p-3 text-center relative transition-all duration-300';
+        diagBadge.classList.add('hidden');
+        diagSub.classList.add('hidden');
+
+        let isLeader = false;
+        if (lab.topics['ha-topic'] && lab.topics['ha-topic'].partitions && lab.topics['ha-topic'].partitions[0]) {
+           isLeader = (lab.topics['ha-topic'].partitions[0].leader === id);
+        }
+
+        if (!lab.brokers[id].isRunning) {
+          diagBroker.classList.add('bg-slate-900', 'border', 'border-slate-800', 'text-slate-600', 'opacity-50', 'scale-95');
+        } else {
+          if (isLeader) {
+             diagBroker.classList.add('bg-rose-500/20', 'border', 'border-rose-500', 'text-rose-200');
+             diagBadge.classList.remove('hidden');
+          } else {
+             diagBroker.classList.add('bg-slate-800', 'border', 'border-slate-700', 'text-slate-400');
+             if (lab.topics['ha-topic']) {
+                diagSub.classList.remove('hidden');
+             }
+          }
+        }
+      });
+    }
+
+    // Broker Buttons Setup
+    [1, 2, 3].forEach(id => {
+      const btn = document.getElementById(`btn-broker${id}`);
+      btn.addEventListener('click', () => {
+        if (!lab.brokers[id].isRunning) {
+          lab.startBroker(id);
+          btn.textContent = "Crash Node";
+          btn.className = "text-[10px] font-bold px-2 py-1 bg-red-900/50 hover:bg-red-800 text-red-200 border border-red-800 rounded transition-colors";
+          logTo(`term${id}-body`, `[KafkaServer id=${id}] started`, 'term-success');
+        } else {
+          lab.crashBroker(id);
+          btn.textContent = "Start Broker";
+          btn.className = "text-[10px] font-bold px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded transition-colors border border-slate-600";
+          logTo(`term${id}-body`, `Broker ${id} forcefully terminated.`, 'term-error');
+          
+          const badge = document.getElementById(`badge-broker${id}`);
+          badge.classList.add('hidden');
+        }
+        updateDiagram();
+      });
+    });
+
+    // Client Terminal Input
+    const term4Input = document.getElementById('term4-input');
+    term4Input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const cmd = e.target.value.trim(); e.target.value = '';
+        if (!cmd) return;
+        logTo('term4-body', cmd, 'term-cmd');
+
+        if (lab.client.isProducing) {
+          const res = lab.sendMessage(cmd);
+          if (!res.success) {
+            logTo('term4-body', res.error, 'term-error');
+          } else {
+            logTo('term4-body', `>> ${cmd}`, 'term-highlight');
+          }
+          return;
+        }
+
+        if (cmd.includes('kafka-topics.bat')) {
+          const res = lab.createTopic('ha-topic', 1, 3);
+          if (res.success) {
+            logTo('term4-body', res.output, 'term-success');
+            updateDiagram();
+          } else {
+            logTo('term4-body', res.error, 'term-error');
+          }
+        } else if (cmd.includes('kafka-console-producer.bat')) {
+          const res = lab.startProducer('ha-topic');
+          if (res.success) {
+            logTo('term4-body', '>', 'term-output');
+          } else {
+            logTo('term4-body', res.error, 'term-error');
+          }
+        } else {
+          logTo('term4-body', `'${cmd}' is not recognized.`, 'term-error');
+        }
+      }
+    });
+
+    function quickCmd(action) {
+      const input = document.getElementById('term4-input');
+      if (action === 'create') {
+        input.value = 'kafka-topics.bat --create --topic ha-topic --partitions 1 --replication-factor 3';
+      } else if (action === 'producer') {
+        input.value = 'kafka-console-producer.bat --topic ha-topic';
+      }
+      input.focus();
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    }
+
+    // Cluster Event Listeners
+    lab.on('logUpdated', (data) => {
+      logTo(`term${data.brokerId}-body`, data.msg, 'term-output');
+    });
+
+    lab.on('leaderElected', (data) => {
+      // Clear old badges
+      [1, 2, 3].forEach(id => {
+        const badge = document.getElementById(`badge-broker${id}`);
+        badge.classList.remove('bg-rose-500', 'bg-slate-600', 'text-white');
+        if (id === data.newLeader) {
+          badge.classList.remove('hidden');
+          badge.classList.add('bg-rose-500', 'text-white');
+          badge.textContent = "LEADER";
+        } else if (lab.brokers[id].isRunning) {
+          badge.classList.remove('hidden');
+          badge.classList.add('bg-slate-600', 'text-white');
+          badge.textContent = "FOLLOWER";
+        }
+      });
+      logTo(`term${data.newLeader}-body`, `[Partition ${data.partition}] Elected as LEADER`, 'term-success');
+      updateDiagram();
+    });
+    
+    lab.on('electionTriggered', (data) => {
+       [1, 2, 3].forEach(id => {
+         if (lab.brokers[id].isRunning) {
+            logTo(`term${id}-body`, `[Partition ${data.partition}] Old leader ${data.oldLeader} down. Triggering Election...`, 'term-highlight');
+         }
+       });
+    });
+
+  </script>
+</body>
+</html>
