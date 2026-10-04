@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kafka Distributed Systems Quiz | Virtual Lab</title>
+
+  <!-- Tailwind CSS & Confetti -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#4f46e5",
+            "primary-dark": "#3730a3",
+            "background-light": "#f5f8fc",
+            "background-dark": "#0f172a",
+            "card-dark": "#1e293b",
+          },
+          fontFamily: {
+            display: ["Roboto", "sans-serif"],
+            body: ["Inter", "sans-serif"]
+          },
+        },
+      },
+    }
+  </script>
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+
+<body class="bg-background-light dark:bg-background-dark font-body text-slate-900 dark:text-slate-100 antialiased min-h-screen flex flex-col">
+
+  <!-- Header matching SRMIST Quiz -->
+  <header class="sticky top-0 z-50 flex items-center justify-between border-b border-white/10 bg-primary text-white px-6 py-3.5 shadow-md">
+    <div class="flex items-center gap-3">
+      <div class="size-7 rounded-lg bg-white/20 flex items-center justify-center text-white">
+        <span class="material-symbols-outlined !text-xl">quiz</span>
+      </div>
+      <div>
+        <h2 class="text-base sm:text-lg font-bold">Apache Kafka Pre/Post-Lab Assessment</h2>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <span id="quiz-progress-text" class="text-xs sm:text-sm font-semibold bg-white/20 px-3 py-1 rounded-full">Question 1 of 10</span>
+      <a href="experiments.html" class="rounded-lg bg-white/20 px-4 py-1.5 text-xs sm:text-sm font-bold hover:bg-white/30 transition inline-flex items-center gap-1">
+        <span class="material-symbols-outlined !text-base">arrow_back</span>
+        Back
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex flex-1 justify-center items-center p-4 sm:p-8">
+    <div class="w-full max-w-3xl">
+      
+      <!-- Progress Bar -->
+      <div class="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full mb-6 overflow-hidden">
+        <div id="progress-bar-fill" class="bg-primary h-full transition-all duration-300 ease-out" style="width: 10%;"></div>
+      </div>
+
+      <!-- Question Card matching SRMIST -->
+      <div id="quiz-container" class="bg-white dark:bg-card-dark rounded-2xl p-6 sm:p-8 shadow-xl border border-slate-200 dark:border-slate-800">
+        
+        <div class="flex items-center justify-between gap-2 mb-4">
+          <span id="question-category" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-primary/10 text-primary dark:bg-primary/20 dark:text-indigo-400">
+            Distributed Systems
+          </span>
+          <span id="question-number-badge" class="text-xs text-slate-400 font-mono">Q1/10</span>
+        </div>
+
+        <h2 id="question" class="text-xl sm:text-2xl font-bold mb-6 text-slate-900 dark:text-white leading-snug"></h2>
+        
+        <div id="options" class="grid grid-cols-1 gap-3.5 mb-8"></div>
+
+        <!-- Explanation Area (Revealed on selection) -->
+        <div id="explanation-box" class="hidden p-4 rounded-xl mb-6 text-sm font-body border"></div>
+
+        <div class="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
+          <button id="prev-btn" class="hidden rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-6 py-2.5 text-sm font-bold hover:bg-slate-300 dark:hover:bg-slate-600 transition">
+            Previous
+          </button>
+          <div class="ml-auto">
+            <button id="next-btn" class="rounded-xl bg-primary text-white px-8 py-2.5 text-sm font-bold hover:bg-primary-dark hover:scale-105 transition-all duration-200 shadow-md">
+              Next Question
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Result Modal Popup matching SRMIST -->
+  <div id="result-popup" class="hidden fixed inset-0 flex items-center justify-center bg-black/80 z-50 p-4 backdrop-blur-sm">
+    <div class="bg-white dark:bg-card-dark rounded-2xl p-8 sm:p-10 shadow-2xl text-center max-w-lg w-full border border-slate-200 dark:border-slate-700 animate-fadeInSlide">
+      <div class="size-20 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
+        <span class="material-symbols-outlined !text-5xl">military_tech</span>
+      </div>
+      <h2 class="text-3xl font-black text-slate-900 dark:text-white mb-2">Assessment Completed!</h2>
+      <p class="text-sm text-text-light dark:text-text-dark mb-6 font-body">Here is your Kafka Distributed Systems score report:</p>
+      
+      <div class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 mb-6 border border-slate-200 dark:border-slate-800">
+        <div class="text-4xl font-extrabold text-primary dark:text-indigo-400 mb-1" id="score-text">0 / 10</div>
+        <div class="text-sm font-semibold text-slate-600 dark:text-slate-400" id="grade-badge">Grade: Excellent</div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <button onclick="window.location.reload()" class="flex-1 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-6 py-3 font-bold text-sm hover:bg-slate-300 dark:hover:bg-slate-600 transition">
+          Retake Quiz
+        </button>
+        <a href="simulation.html" class="flex-1 rounded-xl bg-primary text-white px-6 py-3 font-bold text-sm hover:bg-primary-dark transition shadow-md inline-flex items-center justify-center gap-2">
+          <span>Open Simulator</span>
+          <span class="material-symbols-outlined !text-base">arrow_forward</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const quizData = [
+      {
+        category: "Network & Listeners",
+        question: "In a 3-machine distributed Kafka deployment, why must 'advertised.listeners' be set to the broker's LAN IP rather than 'localhost'?",
+        options: [
+          "A. 'localhost' causes encryption keys to become invalid.",
+          "B. Remote clients receive the advertised listener in metadata and would otherwise attempt to connect to their own machine.",
+          "C. Port 9092 only opens when an IP address is typed.",
+          "D. Kafka KRaft controllers only accept IPv6 loopback addresses."
+        ],
+        answer: 1,
+        explanation: "Kafka clients (Producers/Consumers) query the broker for metadata upon boot. The broker returns the 'advertised.listeners' address. If set to localhost, remote clients will try to connect to 127.0.0.1 on their local machine and fail."
+      },
+      {
+        category: "KRaft Architecture",
+        question: "What is the primary benefit of Kafka KRaft (Kafka Raft Metadata Mode) over legacy ZooKeeper?",
+        options: [
+          "A. It reduces the partition limit to a maximum of 5.",
+          "B. It replaces TCP sockets with UDP for faster lossy transmission.",
+          "C. It unifies metadata management directly into Kafka brokers, enabling faster failovers and single-process management.",
+          "D. It removes the need for disk storage."
+        ],
+        answer: 2,
+        explanation: "KRaft replaces ZooKeeper by using an event-driven Raft consensus quorum directly managed inside Kafka brokers, allowing clusters to scale to millions of partitions with fast metadata synchronization."
+      },
+      {
+        category: "Storage & Formatting",
+        question: "Which command must be executed on a fresh Kafka installation before starting the server in KRaft mode?",
+        options: [
+          "A. zookeeper-server-start.bat",
+          "B. kafka-storage.bat format -t <CLUSTER_ID> -c server.properties",
+          "C. kafka-rebalance.bat --force",
+          "D. kafka-topics.bat --init-cluster"
+        ],
+        answer: 1,
+        explanation: "The 'kafka-storage.bat format' command initializes the log directory with the metadata log version and Cluster UUID."
+      },
+      {
+        category: "Networking & Security",
+        question: "Which default TCP port must be permitted on the Kafka broker's Windows Firewall for plaintext producer and consumer connections?",
+        options: [
+          "A. 8080",
+          "B. 3306",
+          "C. 9092",
+          "D. 2181"
+        ],
+        answer: 2,
+        explanation: "Port 9092 is the standard PLAINTEXT broker port in Apache Kafka. Port 9093 is conventionally used for KRaft controller voter communication."
+      },
+      {
+        category: "Partitions & Offsets",
+        question: "What is the formula to calculate the real-time Consumer Lag for a topic partition?",
+        options: [
+          "A. Lag = HighWatermark / TotalBrokers",
+          "B. Lag = LogEndOffset - CurrentConsumerOffset",
+          "C. Lag = ReplicationFactor * MessageCount",
+          "D. Lag = ProducerThroughput - DiskCapacity"
+        ],
+        answer: 1,
+        explanation: "Consumer Lag is the delta between the Log End Offset (the latest produced record) and the Current Committed Consumer Offset."
+      },
+      {
+        category: "Message Ordering",
+        question: "How does Apache Kafka guarantee total chronological message ordering?",
+        options: [
+          "A. Strict global ordering is guaranteed across all topics and partitions automatically.",
+          "B. Chronological ordering is strictly guaranteed within a single partition.",
+          "C. Ordering is determined by the consumer's CPU clock speed.",
+          "D. Messages are sorted alphabetically before disk commit."
+        ],
+        answer: 1,
+        explanation: "Kafka guarantees strictly ordered message append and consumption within an individual partition. Messages with identical keys hash to the same partition, preserving causal order."
+      },
+      {
+        category: "Consumer CLI",
+        question: "What does the '--from-beginning' flag accomplish when starting kafka-console-consumer.bat?",
+        options: [
+          "A. It deletes all existing messages and resets offset to 0.",
+          "B. It instructs the consumer to read from offset 0 rather than only new incoming messages.",
+          "C. It formats the disk storage.",
+          "D. It restarts the broker daemon."
+        ],
+        answer: 1,
+        explanation: "Without '--from-beginning', the console consumer reads only messages produced after it connected (latest offset). Adding '--from-beginning' replays all historical events stored in the partition."
+      },
+      {
+        category: "Troubleshooting",
+        question: "A remote producer encounters 'Connection Refused: 192.168.1.10:9092'. Which of the following is the most probable cause?",
+        options: [
+          "A. The message payload contained JSON instead of XML.",
+          "B. The Kafka broker daemon on 192.168.1.10 is not running or Windows Firewall is blocking port 9092.",
+          "C. The producer sent messages too slowly.",
+          "D. Java JDK 17 is missing on the client."
+        ],
+        answer: 1,
+        explanation: "A 'Connection Refused' error means the client reached the host, but no active process is listening on port 9092 or an inbound firewall rule is actively rejecting the TCP handshake."
+      },
+      {
+        category: "Producers & ACKs",
+        question: "Which producer acknowledgment configuration ('acks') provides the highest durability against broker crashes?",
+        options: [
+          "A. acks = 0",
+          "B. acks = 1",
+          "C. acks = all (or -1)",
+          "D. acks = none"
+        ],
+        answer: 2,
+        explanation: "'acks=all' (or -1) ensures the leader broker waits until the full set of in-sync replicas (ISR) have acknowledged the record commit before returning success to the producer."
+      },
+      {
+        category: "Replication Factor",
+        question: "In a Kafka cluster with 3 brokers, what is the maximum valid replication factor for a topic?",
+        options: [
+          "A. 1",
+          "B. 3",
+          "C. 10",
+          "D. Unlimited"
+        ],
+        answer: 1,
+        explanation: "The replication factor cannot exceed the total number of distinct brokers available in the cluster, because each replica must reside on a separate physical broker."
+      }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+    let selectedAnswers = Array(quizData.length).fill(null);
+
+    const questionEl = document.getElementById("question");
+    const optionsEl = document.getElementById("options");
+    const categoryEl = document.getElementById("question-category");
+    const questionNumberBadge = document.getElementById("question-number-badge");
+    const quizProgressText = document.getElementById("quiz-progress-text");
+    const progressBarFill = document.getElementById("progress-bar-fill");
+    const explanationBox = document.getElementById("explanation-box");
+    const nextBtn = document.getElementById("next-btn");
+    const prevBtn = document.getElementById("prev-btn");
+    const resultPopup = document.getElementById("result-popup");
+    const scoreText = document.getElementById("score-text");
+    const gradeBadge = document.getElementById("grade-badge");
+
+    function loadQuestion(index) {
+      const q = quizData[index];
+      categoryEl.textContent = q.category;
+      questionNumberBadge.textContent = `Q${index + 1}/${quizData.length}`;
+      quizProgressText.textContent = `Question ${index + 1} of ${quizData.length}`;
+      progressBarFill.style.width = `${((index + 1) / quizData.length) * 100}%`;
+
+      questionEl.textContent = `${index + 1}. ${q.question}`;
+      optionsEl.innerHTML = "";
+
+      const userHasAnswered = selectedAnswers[index] !== null;
+
+      q.options.forEach((option, i) => {
+        const btn = document.createElement("button");
+        btn.className = `option-btn rounded-xl p-4 text-left w-full text-sm sm:text-base font-body border flex items-start gap-3 ${
+          selectedAnswers[index] === i ? "selected" : ""
+        }`;
+        
+        let indicator = `<span class="size-6 rounded-full border border-slate-400 dark:border-slate-600 flex items-center justify-center text-xs font-bold flex-shrink-0">${String.fromCharCode(65 + i)}</span>`;
+        
+        btn.innerHTML = `${indicator} <span class="flex-1">${option}</span>`;
+        
+        btn.onclick = () => {
+          selectedAnswers[index] = i;
+          loadQuestion(index);
+        };
+        optionsEl.appendChild(btn);
+      });
+
+      // Show explanation if answered
+      if (userHasAnswered) {
+        explanationBox.classList.remove("hidden");
+        const isCorrect = selectedAnswers[index] === q.answer;
+        if (isCorrect) {
+          explanationBox.className = "p-4 rounded-xl mb-6 text-sm font-body border bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500/50 text-emerald-800 dark:text-emerald-300";
+          explanationBox.innerHTML = `<strong>Correct!</strong> ${q.explanation}`;
+        } else {
+          explanationBox.className = "p-4 rounded-xl mb-6 text-sm font-body border bg-rose-50 dark:bg-rose-950/40 border-rose-500/50 text-rose-800 dark:text-rose-300";
+          explanationBox.innerHTML = `<strong>Incorrect.</strong> Correct answer is <strong>${String.fromCharCode(65 + q.answer)}</strong>. ${q.explanation}`;
+        }
+      } else {
+        explanationBox.classList.add("hidden");
+      }
+
+      prevBtn.classList.toggle("hidden", index === 0);
+      nextBtn.textContent = index === quizData.length - 1 ? "Submit Assessment" : "Next Question";
+    }
+
+    nextBtn.onclick = () => {
+      if (selectedAnswers[currentQuestion] === null) {
+        alert("Please select an answer to proceed.");
+        return;
+      }
+      if (currentQuestion < quizData.length - 1) {
+        currentQuestion++;
+        loadQuestion(currentQuestion);
+      } else {
+        calculateScore();
+      }
+    };
+
+    prevBtn.onclick = () => {
+      if (currentQuestion > 0) {
+        currentQuestion--;
+        loadQuestion(currentQuestion);
+      }
+    };
+
+    function calculateScore() {
+      score = selectedAnswers.reduce((acc, ans, i) => acc + (ans === quizData[i].answer ? 1 : 0), 0);
+      showResult();
+    }
+
+    function showResult() {
+      resultPopup.classList.remove("hidden");
+      scoreText.textContent = `${score} / ${quizData.length}`;
+      
+      const percentage = (score / quizData.length) * 100;
+      if (percentage >= 80) {
+        gradeBadge.textContent = `Grade: Outstanding (${percentage}%)`;
+        gradeBadge.className = "text-sm font-bold text-emerald-600 dark:text-emerald-400";
+      } else if (percentage >= 50) {
+        gradeBadge.textContent = `Grade: Proficient (${percentage}%)`;
+        gradeBadge.className = "text-sm font-bold text-amber-600 dark:text-amber-400";
+      } else {
+        gradeBadge.textContent = `Grade: Needs Review (${percentage}%)`;
+        gradeBadge.className = "text-sm font-bold text-rose-600 dark:text-rose-400";
+      }
+
+      // Celebratory Confetti matching SRMIST
+      if (typeof confetti === "function") {
+        confetti({
+          particleCount: 180,
+          spread: 100,
+          origin: { y: 0.6 }
+        });
+      }
+    }
+
+    loadQuestion(currentQuestion);
+  </script>
+</body>
+</html>

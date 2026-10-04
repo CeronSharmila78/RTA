@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>3-Machine Distributed Setup | Kafka Virtual Lab</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#4f46e5",
+            "primary-dark": "#3730a3",
+            kafka: "#ff6600",
+            "background-light": "#f6f7f8",
+            "background-dark": "#0f172a",
+            "card-dark": "#1e293b",
+            "text-light": "#64748b",
+            "text-dark": "#94a3b8"
+          },
+          fontFamily: {
+            display: ["Roboto", "sans-serif"],
+            body: ["Inter", "sans-serif"]
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- Google Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+
+  <!-- MathJax for equations -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
+  <div class="flex min-h-screen w-full flex-col">
+    
+    <!-- Header -->
+    <header class="flex items-center justify-between px-6 sm:px-10 py-4 bg-primary text-white shadow-lg sticky top-0 z-50">
+      <div class="flex items-center gap-3">
+        <span class="material-symbols-outlined !text-3xl">lan</span>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold">Experiment 2: 3-Machine Distributed Setup</h1>
+          <p class="text-xs text-indigo-100 font-normal">Apache Kafka KRaft Architecture on Multi-Node Network</p>
+        </div>
+      </div>
+      <a href="experiments.html" class="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-semibold transition">
+        <span class="material-symbols-outlined">arrow_back</span>
+        <span>Back to Experiments</span>
+      </a>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 px-4 py-10 sm:px-6 lg:px-8">
+      <div class="mx-auto max-w-5xl bg-white dark:bg-card-dark text-slate-900 dark:text-slate-100 shadow-xl rounded-2xl p-6 sm:p-10 border border-slate-200 dark:border-slate-800">
+        
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary dark:bg-primary/20 dark:text-indigo-300 text-xs font-semibold uppercase tracking-wider mb-2">
+          Distributed Systems & Event Streaming
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white mb-6">
+          2. Multi-Machine Apache Kafka Architecture (Broker, Producer & Consumer)
+        </h1>
+
+        <!-- Aim Section -->
+        <h2 class="text-2xl font-bold text-primary dark:text-indigo-400 mt-6 mb-2 flex items-center gap-2">
+          <span class="material-symbols-outlined">flag</span>
+          Aim
+        </h2>
+        <p class="text-base text-slate-700 dark:text-slate-300 leading-relaxed font-body">
+          To design, configure, and operate a distributed Apache Kafka cluster across three independent network machines (<strong>Machine 1</strong>: KRaft Broker & Controller, <strong>Machine 2</strong>: Remote Producer, <strong>Machine 3</strong>: Remote Consumer), establishing proper listener advertisement, opening firewall ports, and streaming real-time event payloads.
+        </p>
+
+        <!-- Permanent Glow Info Card matching SRMIST style -->
+        <div class="bg-indigo-50/50 dark:bg-slate-900 border border-primary/50 shadow-lg rounded-2xl p-6 sm:p-8 mt-8 relative glow-card">
+          <h2 class="text-2xl font-bold text-primary dark:text-indigo-400 mb-3 flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">lightbulb</span>
+            Understand the Multi-Machine Networking Mechanism
+          </h2>
+
+          <p class="text-justify text-slate-800 dark:text-slate-200 font-body leading-relaxed">
+            <strong>The Core Challenge:</strong> In a single-machine setup, all components communicate via <code>localhost</code>. However, in a multi-machine architecture, Apache Kafka relies on a <strong>Metadata Protocol</strong>. When a Producer on Machine 2 or Consumer on Machine 3 initiates a connection to Machine 1, the Kafka broker responds with a metadata package containing the <code>advertised.listeners</code> value.
+          </p>
+
+          <p class="text-justify text-slate-800 dark:text-slate-200 font-body leading-relaxed mt-4">
+            If <code>advertised.listeners</code> is mistakenly left as <code>localhost</code>, the remote Producer and Consumer receive <code>localhost:9092</code> in the metadata response and erroneously attempt to send/receive messages to <em>their own local loopback interface</em>, resulting in timeout and disconnect errors. Therefore, <code>advertised.listeners</code> MUST explicitly advertise Machine 1's actual LAN IP address (e.g. <code>PLAINTEXT://192.168.1.10:9092</code>).
+          </p>
+
+          <div class="flex flex-wrap items-center justify-between gap-4 mt-6 pt-4 border-t border-slate-200 dark:border-slate-800">
+            <p class="text-sm font-medium text-slate-600 dark:text-slate-400">
+              <strong>Official Reference:</strong>
+              <a href="https://kafka.apache.org/documentation/#brokerconfigs_advertised.listeners" target="_blank" class="text-primary dark:text-indigo-400 hover:underline font-semibold ml-1">
+                Apache Kafka Broker Configuration Guide &rarr;
+              </a>
+            </p>
+            <a href="quiz.html" class="bg-primary hover:bg-primary-dark text-white text-sm font-bold px-6 py-2.5 rounded-full shadow-md transition duration-200 inline-flex items-center gap-2">
+              <span class="material-symbols-outlined !text-lg">quiz</span>
+              <span>Test Your Understanding</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Network Topology Specification Table -->
+        <h2 class="text-2xl font-bold text-primary dark:text-indigo-400 mt-10 mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined">lan</span>
+          Cluster Network Architecture & IP Allocation
+        </h2>
+
+        <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 mb-8">
+          <table class="w-full text-left text-sm font-body">
+            <thead class="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-200 font-semibold border-b border-slate-200 dark:border-slate-700">
+              <tr>
+                <th class="p-4">Node Designation</th>
+                <th class="p-4">Assigned IP</th>
+                <th class="p-4">Port Bindings</th>
+                <th class="p-4">Configuration Requirements</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+              <tr class="bg-white dark:bg-card-dark">
+                <td class="p-4 font-semibold text-primary dark:text-indigo-400">Machine 1 (Broker)</td>
+                <td class="p-4 font-mono text-xs">192.168.1.10</td>
+                <td class="p-4 font-mono text-xs">9092 (PLAINTEXT), 9093 (CONTROLLER)</td>
+                <td class="p-4">JDK 17, KRaft formatted log storage, inbound firewall rule for port 9092</td>
+              </tr>
+              <tr class="bg-slate-50/50 dark:bg-slate-900/30">
+                <td class="p-4 font-semibold text-emerald-600 dark:text-emerald-400">Machine 2 (Producer)</td>
+                <td class="p-4 font-mono text-xs">192.168.1.20</td>
+                <td class="p-4 font-mono text-xs">Ephemeral client port</td>
+                <td class="p-4">JDK 17, Kafka CLI scripts, connects to <code>192.168.1.10:9092</code></td>
+              </tr>
+              <tr class="bg-white dark:bg-card-dark">
+                <td class="p-4 font-semibold text-amber-600 dark:text-amber-400">Machine 3 (Consumer)</td>
+                <td class="p-4 font-mono text-xs">192.168.1.30</td>
+                <td class="p-4 font-mono text-xs">Ephemeral client port</td>
+                <td class="p-4">JDK 17, Kafka CLI scripts, subscribes to topic on <code>192.168.1.10:9092</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Mathematical & Algorithmic Formulation -->
+        <h2 class="text-2xl font-bold text-primary dark:text-indigo-400 mt-10 mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined">calculate</span>
+          Offset Tracking & Consumer Lag Formulation
+        </h2>
+        
+        <p class="text-slate-700 dark:text-slate-300 font-body leading-relaxed mb-4">
+          Each topic partition constitutes an ordered, immutable sequence of records. Each record within a partition is assigned a sequential identifier known as an <strong>offset</strong>. The real-time synchronization lag of a consumer is computed mathematically as:
+        </p>
+
+        <!-- Equation Box -->
+        <div class="bg-slate-100 dark:bg-slate-900/80 text-center text-slate-800 dark:text-slate-100 p-6 rounded-xl my-6 shadow-sm border border-slate-200 dark:border-slate-700 font-serif text-lg">
+          \( \text{Consumer Lag}(P_i) = \text{LogEndOffset}(P_i) - \text{CurrentConsumerOffset}(P_i) \)
+        </div>
+
+        <p class="text-slate-700 dark:text-slate-300 font-body leading-relaxed mb-4">
+          Where:
+        </p>
+        <ul class="list-disc ml-6 space-y-2 text-slate-700 dark:text-slate-300 font-body">
+          <li>\( \text{LogEndOffset}(P_i) \): The offset of the next message to be appended to partition \( P_i \) by the producer.</li>
+          <li>\( \text{CurrentConsumerOffset}(P_i) \): The latest committed offset read and acknowledged by the consumer group.</li>
+          <li>\( \text{High Watermark} \): The highest offset committed and replicated across all in-sync replicas (ISR).</li>
+        </ul>
+
+        <!-- Step-by-Step Algorithm / Procedure -->
+        <h2 class="text-2xl font-bold text-primary dark:text-indigo-400 mt-10 mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined">format_list_numbered</span>
+          Step-by-Step Procedure
+        </h2>
+
+        <div class="space-y-6">
+          
+          <!-- Phase 1 -->
+          <div class="p-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
+              <span class="size-7 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">1</span>
+              Phase 1: Machine 1 (Kafka Broker Configuration)
+            </h3>
+            <ol class="list-decimal ml-6 space-y-3 text-slate-700 dark:text-slate-300 font-body">
+              <li>
+                Open <code>C:\kafka4.3.1\config\server.properties</code> and set the network listeners:
+                <pre class="bg-slate-900 text-slate-100 p-3 rounded-lg font-mono text-xs mt-2 overflow-x-auto">listeners=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+advertised.listeners=PLAINTEXT://192.168.1.10:9092
+controller.quorum.voters=1@localhost:9093
+log.dirs=C:/tmp/kraft-combined-logs</pre>
+              </li>
+              <li>
+                Open inbound port <code>9092</code> on Machine 1 via PowerShell (Administrator):
+                <pre class="bg-slate-900 text-slate-100 p-3 rounded-lg font-mono text-xs mt-2 overflow-x-auto">New-NetFirewallRule -DisplayName "Kafka 9092" -Direction Inbound -LocalPort 9092 -Protocol TCP -Action Allow</pre>
+              </li>
+              <li>
+                Generate Cluster UUID and format storage:
+                <pre class="bg-slate-900 text-slate-100 p-3 rounded-lg font-mono text-xs mt-2 overflow-x-auto">kafka-storage.bat random-uuid
+kafka-storage.bat format -t &lt;CLUSTER_UUID&gt; -c C:\kafka4.3.1\config\server.properties --ignore-formatted</pre>
+              </li>
+              <li>
+                Start the Kafka server:
+                <pre class="bg-slate-900 text-slate-100 p-3 rounded-lg font-mono text-xs mt-2 overflow-x-auto">kafka-server-start.bat C:\kafka4.3.1\config\server.properties</pre>
+              </li>
+            </ol>
+          </div>
+
+          <!-- Phase 2 -->
+          <div class="p-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
+              <span class="size-7 rounded-full bg-emerald-600 text-white text-xs flex items-center justify-center font-bold">2</span>
+              Phase 2: Machine 2 (Producer Initialization)
+            </h3>
+            <ol class="list-decimal ml-6 space-y-3 text-slate-700 dark:text-slate-300 font-body">
+              <li>
+                Verify connectivity to Machine 1 on port 9092:
+                <pre class="bg-slate-900 text-slate-100 p-3 rounded-lg font-mono text-xs mt-2 overflow-x-auto">Test-NetConnection -ComputerName 192.168.1.10 -Port 9092</pre>
+              </li>
+              <li>
+                Create the topic remotely from Machine 2:
+                <pre class="bg-slate-900 text-slate-100 p-3 rounded-lg font-mono text-xs mt-2 overflow-x-auto">kafka-topics.bat --create --topic fsd-topic --bootstrap-server 192.168.1.10:9092 --partitions 1 --replication-factor 1</pre>
+              </li>
+              <li>
+                Launch the interactive Console Producer:
+                <pre class="bg-slate-900 text-slate-100 p-3 rounded-lg font-mono text-xs mt-2 overflow-x-auto">kafka-console-producer.bat --topic fsd-topic --bootstrap-server 192.168.1.10:9092</pre>
+              </li>
+            </ol>
+          </div>
+
+          <!-- Phase 3 -->
+          <div class="p-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
+              <span class="size-7 rounded-full bg-amber-600 text-white text-xs flex items-center justify-center font-bold">3</span>
+              Phase 3: Machine 3 (Consumer Initialization)
+            </h3>
+            <ol class="list-decimal ml-6 space-y-3 text-slate-700 dark:text-slate-300 font-body">
+              <li>
+                Launch the Console Consumer to stream from offset 0:
+                <pre class="bg-slate-900 text-slate-100 p-3 rounded-lg font-mono text-xs mt-2 overflow-x-auto">kafka-console-consumer.bat --topic fsd-topic --from-beginning --bootstrap-server 192.168.1.10:9092</pre>
+              </li>
+              <li>
+                Type messages into Machine 2's producer prompt and observe instantaneous real-time arrival on Machine 3.
+              </li>
+            </ol>
+          </div>
+
+        </div>
+
+        <!-- Simulation Section matching SRMIST -->
+        <h2 class="text-2xl font-bold text-primary dark:text-indigo-400 mt-10 mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined">science</span>
+          Interactive Multi-Machine Simulation
+        </h2>
+        <p class="text-slate-700 dark:text-slate-300 font-body mb-6">
+          Execute this complete multi-machine experiment inside the real-time virtual laboratory simulator with live interactive command terminals, animated packet flow, and commit log inspection.
+        </p>
+
+        <div class="text-center py-6 bg-slate-100 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <a href="simulation.html"
+             class="inline-flex items-center gap-3 bg-primary hover:bg-primary-dark text-white font-bold py-3.5 px-8 rounded-xl shadow-lg hover:shadow-indigo-500/30 transition duration-300 transform hover:scale-105">
+            <span class="material-symbols-outlined !text-2xl">terminal</span>
+            <span class="text-base">Launch Multi-Machine Interactive Simulation</span>
+          </a>
+        </div>
+
+        <!-- Pre-Lab Questions matching SRMIST -->
+        <h2 class="text-2xl font-bold text-primary dark:text-indigo-400 mt-10 mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined">help</span>
+          Pre-Lab Questions
+        </h2>
+        <ol class="list-decimal ml-6 space-y-2 text-slate-700 dark:text-slate-300 font-body">
+          <li>What is the primary difference between <code>listeners</code> and <code>advertised.listeners</code> in Apache Kafka configuration?</li>
+          <li>Why does a remote producer fail when <code>advertised.listeners</code> is configured with <code>localhost:9092</code>?</li>
+          <li>Explain the role of KRaft quorum voters (<code>controller.quorum.voters</code>) in replacing ZooKeeper for metadata management.</li>
+          <li>What network transport protocol does Apache Kafka use, and why is inbound TCP port 9092 required?</li>
+        </ol>
+
+        <!-- Post-Lab Questions matching SRMIST -->
+        <h2 class="text-2xl font-bold text-primary dark:text-indigo-400 mt-10 mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined">task_alt</span>
+          Post-Lab Questions
+        </h2>
+        <ol class="list-decimal ml-6 space-y-2 text-slate-700 dark:text-slate-300 font-body">
+          <li>If a consumer starts without the <code>--from-beginning</code> flag, which offset does it read by default?</li>
+          <li>How does Kafka guarantee message order across multiple partitions vs a single partition?</li>
+          <li>Calculate the consumer lag if a partition's Log End Offset is <code>150</code> and the consumer group's committed offset is <code>128</code>.</li>
+        </ol>
+
+        <!-- Result Section matching SRMIST -->
+        <h2 class="text-2xl font-bold text-primary dark:text-indigo-400 mt-10 mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined">verified</span>
+          Result & Verification
+        </h2>
+        <div class="p-6 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-body leading-relaxed">
+          The distributed 3-machine Apache Kafka cluster was successfully configured and verified. Remote Producer on Machine 2 (<code>192.168.1.20</code>) published messages to topic <code>fsd-topic</code> on Broker (<code>192.168.1.10:9092</code>), which were consumed in real-time by Consumer on Machine 3 (<code>192.168.1.30</code>) with zero packet loss and synchronized offset tracking.
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-6">
+      <div class="max-w-7xl mx-auto px-4 text-center">
+        <p class="text-sm text-slate-600 dark:text-slate-400 flex items-center justify-center gap-1.5">
+          <span class="material-symbols-outlined align-middle text-primary !text-base">person</span>
+          Developed by 
+          <span class="font-bold text-primary dark:text-indigo-400">Dr. V. Ceronmani Sharmila</span>
+        </p>
+        <p class="text-xs mt-1 text-slate-500 dark:text-slate-400">
+          Associate Professor, Department of Electronics and Communication Engineering, SRM IST, KTR Campus
+        </p>
+      </div>
+    </footer>
+
+  </div>
+</body>
+</html>

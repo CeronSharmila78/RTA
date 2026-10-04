@@ -64,10 +64,15 @@
           <a class="text-sm font-medium text-text-light dark:text-text-dark hover:text-emerald-500 transition-colors" href="jetson-nano-placeholder.html">Jetson Nano</a>
           <a class="text-sm font-medium text-text-light dark:text-text-dark hover:text-primary transition-colors" href="feedback.html">Feedback</a>
         </nav>
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3">
+          <a href="simulation.html"
+             class="flex items-center justify-center rounded-lg h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition-all duration-300 ease-in-out transform hover:scale-105 shadow-md">
+            <span class="material-symbols-outlined mr-1.5 !text-xl">sync_alt</span>
+            <span>3-Machine Simulator</span>
+          </a>
           <a href="quiz-kafka.html"
-             class="flex items-center justify-center rounded-lg h-10 px-5 bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-all duration-300 ease-in-out transform hover:scale-105 shadow-md">
-            <span class="material-symbols-outlined mr-2 !text-xl">quiz</span>
+             class="flex items-center justify-center rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-all duration-300 ease-in-out transform hover:scale-105 shadow-md">
+            <span class="material-symbols-outlined mr-1.5 !text-xl">quiz</span>
             <span>Knowledge Quiz</span>
           </a>
         </div>
@@ -131,10 +136,14 @@
               </p>
             </div>
           </div>
-          <div class="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800/50">
-            <a class="w-full flex items-center justify-center rounded-lg h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition-all duration-300 ease-in-out transform hover:scale-[1.02]" href="exp-pipeline.html">
-              <span class="material-symbols-outlined mr-2 !text-xl">settings_ethernet</span>
+          <div class="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800/50 flex flex-col sm:flex-row gap-2">
+            <a class="flex-1 flex items-center justify-center rounded-lg h-10 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all duration-300 ease-in-out transform hover:scale-[1.02]" href="exp-pipeline.html">
+              <span class="material-symbols-outlined mr-1.5 !text-lg">settings_ethernet</span>
               <span>Launch Sandbox</span>
+            </a>
+            <a class="flex-1 flex items-center justify-center rounded-lg h-10 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition-all duration-300 ease-in-out transform hover:scale-[1.02]" href="simulation.html">
+              <span class="material-symbols-outlined mr-1.5 !text-lg">lan</span>
+              <span>Live Topology</span>
             </a>
           </div>
         </div>
