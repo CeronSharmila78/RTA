@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Experiment 2: Jetson Nano 40-Pin GPIO & IoT Sensor | Edge AI Virtual Lab</title>
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#eab308", // Yellow / Amber for GPIO
+            "primary-dark": "#ca8a04",
+            "background-dark": "#0f172a",
+            "card-dark": "#1e293b",
+            "text-dark": "#94a3b8"
+          },
+          fontFamily: {
+            display: ["Roboto", "sans-serif"],
+            body: ["Inter", "sans-serif"],
+            mono: ["Fira Code", "monospace"]
+          },
+        },
+      },
+    };
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/custom.css">
+
+  <style>
+    .split-guide { overflow-y: auto; max-height: calc(100vh - 3.5rem); }
+    .split-sandbox { overflow-y: auto; max-height: calc(100vh - 3.5rem); }
+    .breadboard {
+      background: #f1f5f9;
+      border-radius: 12px;
+      position: relative;
+    }
+    .dark .breadboard {
+      background: #1e293b;
+      border: 2px solid #334155;
+    }
+    .led-bulb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #475569;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+      transition: all 0.2s ease;
+    }
+    .led-bulb.glow {
+      background: #22c55e;
+      box-shadow: 0 0 25px #22c55e, 0 0 40px #4ade80, inset 0 2px 4px #bbf7d0;
+    }
+  </style>
+</head>
+
+<body class="bg-background-dark font-display text-slate-100 antialiased h-screen">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-6 py-3 bg-amber-600 shadow-lg sticky top-0 z-50 h-14">
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined !text-2xl text-white">cable</span>
+      <div>
+        <h1 class="text-lg font-bold text-white">Experiment 2: IoT Sensor & 40-Pin GPIO Programming</h1>
+        <p class="text-xs text-amber-100 font-normal">Jetson.GPIO &middot; Pin 18 Output &middot; Pin 12 Input Interrupt &middot; PWM</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="jetson-nano-placeholder.html" class="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-semibold transition text-white">
+        <span class="material-symbols-outlined !text-base">arrow_back</span>
+        <span>Back to Module 3</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Split Screen -->
+  <div class="flex flex-col lg:flex-row" style="height: calc(100vh - 3.5rem);">
+
+    <!-- LEFT PANE: Lab Manual & Circuit Theory -->
+    <div class="split-guide w-full lg:w-1/2 h-full bg-background-dark border-r border-slate-800 p-6 sm:p-8">
+
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-semibold uppercase tracking-wider mb-4 border border-amber-500/20">
+        Module 3 &middot; Edge Sensor Interfacing
+      </div>
+
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-3">Jetson Nano 40-Pin Expansion Header</h2>
+      <p class="text-text-dark font-body text-sm leading-relaxed mb-6">
+        The Jetson Nano includes a 40-pin GPIO (General Purpose Input/Output) header compatible with Raspberry Pi hat standards. The official <code class="text-amber-400">Jetson.GPIO</code> Python library provides hardware-level digital I/O, software and hardware PWM, and edge-triggered interrupt callbacks.
+      </p>
+
+      <!-- Aim -->
+      <div class="bg-slate-900/90 border border-amber-500/40 rounded-2xl p-5 mb-6 shadow-lg">
+        <h3 class="text-base font-bold text-amber-400 flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined !text-lg">flag</span> Aim of the Experiment
+        </h3>
+        <p class="text-sm text-slate-300 font-body leading-relaxed">
+          To interface an output actuator (LED with current-limiting resistor) to physical Pin 18 (GPIO 24) and an input sensor (tactile push-button with internal pull-up resistor) to physical Pin 12 (GPIO 18) of the Jetson Nano, and program event-driven asynchronous control in Python.
+        </p>
+      </div>
+
+      <!-- Pinout Matrix -->
+      <div class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-5 mb-6">
+        <h3 class="text-base font-bold text-slate-200 flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined !text-lg text-amber-400">format_list_numbered</span>
+          Hardware Wiring Specification
+        </h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono">
+            <thead>
+              <tr class="border-b border-slate-700 text-slate-400">
+                <th class="py-2">Pin #</th>
+                <th>Header Name</th>
+                <th>Direction</th>
+                <th>Component Connection</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-300">
+              <tr>
+                <td class="py-2 text-amber-400 font-bold">Pin 18</td>
+                <td>GPIO24 / LCD_D18</td>
+                <td><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400">OUTPUT</span></td>
+                <td>LED Anode (+), through 220&Omega; resistor</td>
+              </tr>
+              <tr>
+                <td class="py-2 text-amber-400 font-bold">Pin 12</td>
+                <td>GPIO18 / AUDIO_MCLK</td>
+                <td><span class="px-2 py-0.5 rounded bg-sky-500/10 text-sky-400">INPUT (PULL_UP)</span></td>
+                <td>Tactile Push Button (to GND)</td>
+              </tr>
+              <tr>
+                <td class="py-2 text-slate-400 font-bold">Pin 6, 9</td>
+                <td>GND (Ground)</td>
+                <td><span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400">COMMON</span></td>
+                <td>Common Circuit Ground rail</td>
+              </tr>
+              <tr>
+                <td class="py-2 text-rose-400 font-bold">Pin 1, 17</td>
+                <td>3.3V Power</td>
+                <td><span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400">SUPPLY</span></td>
+                <td>Logic High Reference</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Mission Checklist -->
+      <div class="bg-card-dark rounded-xl border border-slate-700 p-4 mb-6 shadow-md">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <span class="material-symbols-outlined !text-base text-amber-400">checklist</span>
+            Lab Mission Milestones
+          </h3>
+          <span id="gpio-milestone-badge" class="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold">0 / 3 Complete</span>
+        </div>
+        <div class="space-y-2 text-xs font-body">
+          <div id="gm1" class="flex items-center gap-2 p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 status-icon">radio_button_unchecked</span>
+            <span>1. Initialize GPIO Mode (<code>GPIO.setmode(GPIO.BOARD)</code>) & Configure Pins</span>
+          </div>
+          <div id="gm2" class="flex items-center gap-2 p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 status-icon">radio_button_unchecked</span>
+            <span>2. Execute Python Loop to Toggle Pin 18 LED State</span>
+          </div>
+          <div id="gm3" class="flex items-center gap-2 p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 status-icon">radio_button_unchecked</span>
+            <span>3. Trigger Hardware Interrupt with Virtual Push-Button on Pin 12</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANE: Interactive Virtual Breadboard & Python Execution Engine -->
+    <div class="split-sandbox w-full lg:w-1/2 h-full bg-slate-950 p-6 flex flex-col gap-5">
+
+      <!-- Virtual Circuit Breadboard -->
+      <div class="bg-card-dark rounded-2xl p-5 border border-slate-800 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <span class="material-symbols-outlined text-amber-400">developer_board</span>
+            Virtual Breadboard & Sensor Setup
+          </h3>
+          <span id="circuit-voltage-badge" class="text-xs font-mono font-bold text-slate-400 px-2 py-0.5 rounded bg-slate-800 border border-slate-700">Pin 18: 0.0V (LOW)</span>
+        </div>
+
+        <div class="breadboard p-5 grid grid-cols-2 gap-4 items-center">
+          <!-- Actuator: LED Component -->
+          <div class="bg-slate-900/80 rounded-xl p-4 border border-slate-700/60 flex items-center gap-4">
+            <div class="led-bulb" id="led-indicator"></div>
+            <div>
+              <div class="text-xs font-bold text-white">Green LED Actuator</div>
+              <div class="text-[11px] text-slate-400 font-mono">Pin 18 &middot; 220&Omega; Resistor</div>
+              <div class="text-[11px] font-bold text-slate-500 mt-1" id="led-status-text">State: OFF</div>
+            </div>
+          </div>
+
+          <!-- Sensor: Tactile Push-Button Component -->
+          <div class="bg-slate-900/80 rounded-xl p-4 border border-slate-700/60 flex items-center justify-between">
+            <div>
+              <div class="text-xs font-bold text-white">Push-Button Sensor</div>
+              <div class="text-[11px] text-slate-400 font-mono">Pin 12 &middot; PULL_UP</div>
+              <div class="text-[11px] font-bold text-slate-500 mt-1" id="button-status-text">Button: Released</div>
+            </div>
+            <button id="hw-button" onmousedown="pressButton()" onmouseup="releaseButton()" class="size-11 rounded-full bg-rose-600 hover:bg-rose-500 active:scale-95 text-white flex items-center justify-center shadow-lg transition border-2 border-rose-400">
+              <span class="material-symbols-outlined !text-xl">touch_app</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Python Code Editor & Output Console -->
+      <div class="terminal-window flex-1 flex flex-col">
+        <div class="terminal-header">
+          <div class="flex items-center gap-2">
+            <div class="terminal-controls">
+              <span class="terminal-dot dot-red"></span>
+              <span class="terminal-dot dot-yellow"></span>
+              <span class="terminal-dot dot-green"></span>
+            </div>
+            <span class="text-xs font-bold text-slate-300 font-mono ml-2">gpio_control.py &mdash; Python 3.6 (Jetson.GPIO)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-run" onclick="runScript()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold flex items-center gap-1 shadow transition">
+              <span class="material-symbols-outlined !text-sm">play_arrow</span>
+              Run Script
+            </button>
+            <button id="btn-stop" onclick="stopScript()" class="px-3 py-1 bg-rose-700 hover:bg-rose-600 text-white rounded text-xs font-bold flex items-center gap-1 shadow transition" disabled>
+              <span class="material-symbols-outlined !text-sm">stop</span>
+              Stop
+            </button>
+          </div>
+        </div>
+
+        <!-- Code Preview & Execution Terminal Tabs -->
+        <div class="grid grid-cols-1 md:grid-cols-2 flex-1 overflow-hidden">
+          
+          <!-- Code View -->
+          <div class="bg-slate-950 p-3 border-r border-slate-800 text-xs font-mono text-slate-300 overflow-y-auto leading-relaxed">
+            <div class="text-slate-500 mb-1"># Jetson Nano Edge GPIO Controller</div>
+            <div><span class="text-purple-400">import</span> Jetson.GPIO <span class="text-purple-400">as</span> GPIO</div>
+            <div><span class="text-purple-400">import</span> time</div>
+            <br/>
+            <div>LED_PIN = <span class="text-amber-400">18</span>   <span class="text-slate-500"># Output</span></div>
+            <div>BTN_PIN = <span class="text-amber-400">12</span>   <span class="text-slate-500"># Input</span></div>
+            <br/>
+            <div>GPIO.setmode(GPIO.BOARD)</div>
+            <div>GPIO.setup(LED_PIN, GPIO.OUT, initial=GPIO.LOW)</div>
+            <div>GPIO.setup(BTN_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)</div>
+            <br/>
+            <div class="text-slate-500"># Interrupt Event Listener</div>
+            <div><span class="text-blue-400">def</span> <span class="text-emerald-400">btn_callback</span>(channel):</div>
+            <div class="pl-4">print(<span class="text-green-300">"[INTERRUPT] Button Pressed on Pin 12!"</span>)</div>
+            <div class="pl-4">GPIO.output(LED_PIN, GPIO.HIGH)</div>
+            <br/>
+            <div>GPIO.add_event_detect(BTN_PIN, GPIO.FALLING, callback=btn_callback, bouncetime=<span class="text-amber-400">200</span>)</div>
+          </div>
+
+          <!-- Live Output Console -->
+          <div class="terminal-body terminal-body-exp bg-slate-900/90 text-xs font-mono p-3 overflow-y-auto" id="gpio-term-body">
+            <div class="term-line term-info">Press 'Run Script' to execute GPIO initialization.</div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let isRunning = false;
+    let timerId = null;
+    let ledState = false;
+    let doneMilestones = new Set();
+
+    function updateMilestone(id) {
+      if (!doneMilestones.has(id)) {
+        doneMilestones.add(id);
+        const item = document.getElementById(id);
+        if (item) {
+          item.classList.remove('text-slate-400');
+          item.classList.add('bg-amber-950/40', 'border-amber-500/40', 'text-amber-300');
+          const icon = item.querySelector('.status-icon');
+          if (icon) {
+            icon.textContent = 'check_circle';
+            icon.classList.remove('text-slate-600');
+            icon.classList.add('text-amber-400');
+          }
+        }
+        document.getElementById('gpio-milestone-badge').textContent = `${doneMilestones.size} / 3 Complete`;
+      }
+    }
+
+    function appendTerm(text, cls = '') {
+      const body = document.getElementById('gpio-term-body');
+      const div = document.createElement('div');
+      div.className = `term-line ${cls}`;
+      div.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+      body.appendChild(div);
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function setLed(state) {
+      ledState = state;
+      const bulb = document.getElementById('led-indicator');
+      const vBadge = document.getElementById('circuit-voltage-badge');
+      const lText = document.getElementById('led-status-text');
+
+      if (ledState) {
+        bulb.classList.add('glow');
+        vBadge.textContent = 'Pin 18: 3.3V (HIGH)';
+        vBadge.className = 'text-xs font-mono font-bold text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30';
+        lText.textContent = 'State: ON (Glowing)';
+        lText.className = 'text-[11px] font-bold text-emerald-400 mt-1';
+      } else {
+        bulb.classList.remove('glow');
+        vBadge.textContent = 'Pin 18: 0.0V (LOW)';
+        vBadge.className = 'text-xs font-mono font-bold text-slate-400 px-2 py-0.5 rounded bg-slate-800 border border-slate-700';
+        lText.textContent = 'State: OFF';
+        lText.className = 'text-[11px] font-bold text-slate-500 mt-1';
+      }
+    }
+
+    function runScript() {
+      if (isRunning) return;
+      isRunning = true;
+      document.getElementById('btn-run').disabled = true;
+      document.getElementById('btn-stop').disabled = false;
+
+      appendTerm('Initializing Jetson.GPIO driver on /dev/nvhost-as-gpu...', 'text-slate-400');
+      appendTerm('GPIO.setmode(GPIO.BOARD) -> Pin numbering active.', 'text-amber-300');
+      appendTerm('Configuring Pin 18 as OUTPUT (initial=LOW).', 'text-amber-300');
+      appendTerm('Configuring Pin 12 as INPUT with internal PULL_UP resistor.', 'text-amber-300');
+      appendTerm('Interrupt handler attached: callback=btn_callback on FALLING edge.', 'text-amber-300');
+      updateMilestone('gm1');
+
+      appendTerm('Entering main event loop (blinking LED every 1.5s)...', 'text-emerald-400');
+
+      let count = 0;
+      timerId = setInterval(() => {
+        count++;
+        const nextState = count % 2 === 1;
+        setLed(nextState);
+        appendTerm(`GPIO.output(18, ${nextState ? 'GPIO.HIGH' : 'GPIO.LOW'}) &middot; Loop cycle #${count}`, nextState ? 'text-emerald-300' : 'text-slate-400');
+        if (count >= 2) {
+          updateMilestone('gm2');
+        }
+      }, 1500);
+    }
+
+    function stopScript() {
+      if (!isRunning) return;
+      clearInterval(timerId);
+      isRunning = false;
+      document.getElementById('btn-run').disabled = false;
+      document.getElementById('btn-stop').disabled = true;
+      setLed(false);
+      appendTerm('GPIO.cleanup() executed. All pins released to safe high-Z state.', 'text-rose-400');
+    }
+
+    function pressButton() {
+      document.getElementById('button-status-text').textContent = 'Button: PRESSED (Pin 12 -> GND)';
+      document.getElementById('button-status-text').className = 'text-[11px] font-bold text-rose-400 mt-1';
+
+      if (isRunning) {
+        appendTerm('⚡ [HARDWARE INTERRUPT] Pin 12 Falling Edge detected! Executing btn_callback().', 'text-amber-400 font-bold');
+        setLed(true);
+        updateMilestone('gm3');
+      } else {
+        appendTerm('[Hardware Notice] Button pressed, but Python script is not running.', 'text-slate-500');
+      }
+    }
+
+    function releaseButton() {
+      document.getElementById('button-status-text').textContent = 'Button: Released';
+      document.getElementById('button-status-text').className = 'text-[11px] font-bold text-slate-500 mt-1';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Experiment 4: Azure Stream Analytics & Windowing | Virtual Lab</title>
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#f59e0b", // Amber 500 for Stream Analytics
+            "primary-dark": "#d97706",
+            "background-dark": "#0f172a",
+            "card-dark": "#1e293b",
+            "text-dark": "#94a3b8"
+          },
+          fontFamily: {
+            display: ["Roboto", "sans-serif"],
+            body: ["Inter", "sans-serif"],
+            mono: ["Fira Code", "monospace"]
+          },
+        },
+      },
+    };
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/custom.css">
+
+  <style>
+    .split-guide { overflow-y: auto; max-height: calc(100vh - 3.5rem); }
+    .split-sandbox { overflow-y: auto; max-height: calc(100vh - 3.5rem); }
+  </style>
+</head>
+
+<body class="bg-background-dark font-display text-slate-100 antialiased h-screen">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-6 py-3 bg-amber-600 shadow-lg sticky top-0 z-50 h-14">
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined !text-2xl text-white">bolt</span>
+      <div>
+        <h1 class="text-lg font-bold text-white">Experiment 4: Real-Time Stream Processing (ASA)</h1>
+        <p class="text-xs text-amber-100 font-normal">Tumbling &middot; Hopping &middot; Sliding Windows &middot; Complex Event Processing</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="azure-simulator.html" class="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition text-white">
+        <span class="material-symbols-outlined !text-base">cloud</span>
+        <span>Cloud Simulator</span>
+      </a>
+      <a href="azure-lab-placeholder.html" class="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-semibold transition text-white">
+        <span class="material-symbols-outlined !text-base">arrow_back</span>
+        <span>Back to Module 2</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Split Screen -->
+  <div class="flex flex-col lg:flex-row" style="height: calc(100vh - 3.5rem);">
+
+    <!-- LEFT PANE: Lab Manual & Windowing Theory -->
+    <div class="split-guide w-full lg:w-1/2 h-full bg-background-dark border-r border-slate-800 p-6 sm:p-8">
+
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-semibold uppercase tracking-wider mb-4 border border-amber-500/20">
+        Module 2 &middot; Chapter 4 Courseware
+      </div>
+
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-3">Azure Stream Analytics (ASA) Engine</h2>
+      <p class="text-text-dark font-body text-sm leading-relaxed mb-6">
+        Azure Stream Analytics is an enterprise managed Complex Event Processing (CEP) engine. It uses a declarative, SQL-based syntax extended with temporal windowing primitives to analyze unbounded streams in motion with sub-second latencies.
+      </p>
+
+      <!-- Aim -->
+      <div class="bg-slate-900/90 border border-amber-500/40 rounded-2xl p-5 mb-6 shadow-lg">
+        <h3 class="text-base font-bold text-amber-400 flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined !text-lg">flag</span> Aim of the Experiment
+        </h3>
+        <p class="text-sm text-slate-300 font-body leading-relaxed">
+          To author and evaluate real-time Stream Analytics queries over live Event Hubs streams, configure and contrast the behavior of Tumbling, Hopping, and Sliding windows, and filter critical IoT anomaly events.
+        </p>
+      </div>
+
+      <!-- Window Types Theory -->
+      <div class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-5 mb-6">
+        <h3 class="text-base font-bold text-slate-200 flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined !text-lg text-amber-400">schedule</span>
+          Three Core ASA Windowing Primitives
+        </h3>
+        <div class="space-y-3 text-xs text-slate-300 font-body leading-relaxed">
+          <div class="p-3 rounded-lg bg-slate-950 border border-slate-800">
+            <span class="font-bold text-amber-400 block mb-0.5">1. Tumbling Window:</span>
+            Non-overlapping, contiguous time segments. Every event belongs to exactly one window.
+            <div class="mt-1 font-mono text-[11px] text-slate-400">GROUP BY TumblingWindow(second, 10)</div>
+          </div>
+          <div class="p-3 rounded-lg bg-slate-950 border border-slate-800">
+            <span class="font-bold text-amber-400 block mb-0.5">2. Hopping Window:</span>
+            Overlapping windows that advance forward by a fixed hop interval (e.g. 10s window every 5s hop).
+            <div class="mt-1 font-mono text-[11px] text-slate-400">GROUP BY HoppingWindow(second, 10, 5)</div>
+          </div>
+          <div class="p-3 rounded-lg bg-slate-950 border border-slate-800">
+            <span class="font-bold text-amber-400 block mb-0.5">3. Sliding Window:</span>
+            Only produces an output when an event enters or exits the window duration.
+            <div class="mt-1 font-mono text-[11px] text-slate-400">GROUP BY SlidingWindow(second, 10) HAVING COUNT(*) &gt; 3</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mission Checklist -->
+      <div class="bg-card-dark rounded-xl border border-slate-700 p-4 mb-6 shadow-md">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <span class="material-symbols-outlined !text-base text-amber-400">checklist</span>
+            Lab Mission Milestones
+          </h3>
+          <span id="asa-badge" class="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold">0 / 3 Complete</span>
+        </div>
+        <div class="space-y-2 text-xs font-body">
+          <div id="sm1" class="flex items-center gap-2 p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 status-icon">radio_button_unchecked</span>
+            <span>1. Configure Temporal Windowing Function in T-SQL Stream Query</span>
+          </div>
+          <div id="sm2" class="flex items-center gap-2 p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 status-icon">radio_button_unchecked</span>
+            <span>2. Start ASA Query Execution over Live Event Stream</span>
+          </div>
+          <div id="sm3" class="flex items-center gap-2 p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 status-icon">radio_button_unchecked</span>
+            <span>3. Inject High-Temperature Anomaly & Verify Real-Time Filter Output</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANE: Interactive ASA Stream Query Sandbox -->
+    <div class="split-sandbox w-full lg:w-1/2 h-full bg-slate-950 p-6 flex flex-col gap-5">
+
+      <!-- Query Editor Window -->
+      <div class="bg-card-dark rounded-2xl p-5 border border-slate-800 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <span class="material-symbols-outlined text-amber-400">code</span>
+            Stream Analytics Query Editor (T-SQL)
+          </h3>
+          <span id="job-state-badge" class="text-xs font-mono font-bold text-slate-400 px-2 py-0.5 rounded bg-slate-800 border border-slate-700">JOB STOPPED</span>
+        </div>
+
+        <div class="mb-3">
+          <label class="block text-slate-400 text-xs mb-1 font-semibold">Select Windowing Function</label>
+          <select id="sel-window" onchange="changeWindowQuery()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 font-mono text-xs focus:ring-1 focus:ring-amber-500">
+            <option value="tumbling">Tumbling Window (10 Seconds, Non-Overlapping)</option>
+            <option value="hopping">Hopping Window (10s Duration, 5s Advance Hop)</option>
+            <option value="sliding">Sliding Window (Alert if Temp &gt; 35&deg;C)</option>
+          </select>
+        </div>
+
+        <!-- Pre-loaded T-SQL Query Box -->
+        <pre id="query-display" class="bg-slate-950 text-amber-300 p-3.5 rounded-xl text-xs font-mono border border-slate-800 leading-relaxed overflow-x-auto">SELECT 
+    System.Timestamp() AS WindowEnd,
+    DeviceId,
+    AVG(Temperature) AS AvgTemp,
+    COUNT(*) AS EventCount
+FROM 
+    EventHubInput TIMESTAMP BY EventTime
+GROUP BY 
+    TumblingWindow(second, 10), DeviceId</pre>
+
+        <div class="flex items-center gap-2 mt-4">
+          <button id="btn-run-asa" onclick="startAsaJob()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow">
+            <span class="material-symbols-outlined !text-sm">play_arrow</span>
+            Start Job & Stream
+          </button>
+          <button onclick="injectAnomaly()" class="px-4 py-2 bg-rose-700 hover:bg-rose-600 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow">
+            <span class="material-symbols-outlined !text-sm">warning</span>
+            Inject 42&deg;C Anomaly
+          </button>
+          <button onclick="stopAsaJob()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition border border-slate-700">
+            Stop Job
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Stream Output Table -->
+      <div class="terminal-window flex-1 flex flex-col">
+        <div class="terminal-header">
+          <div class="flex items-center gap-2">
+            <div class="terminal-controls">
+              <span class="terminal-dot dot-red"></span>
+              <span class="terminal-dot dot-yellow"></span>
+              <span class="terminal-dot dot-green"></span>
+            </div>
+            <span class="text-xs font-bold text-slate-300 font-mono ml-2">ASA Output Sink Table (Power BI & Serving Lake)</span>
+          </div>
+          <span class="text-[10px] text-slate-400 font-mono" id="records-emitted">Emitted: 0 records</span>
+        </div>
+
+        <div class="terminal-body terminal-body-exp flex-1 bg-slate-950 p-3 font-mono text-xs overflow-y-auto" id="asa-output-body">
+          <div class="term-line term-info">ASA Output Sink initialized. Ready for window emission.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let isJobRunning = false;
+    let timerId = null;
+    let emittedCount = 0;
+    let doneMilestones = new Set();
+
+    function updateMilestone(id) {
+      if (!doneMilestones.has(id)) {
+        doneMilestones.add(id);
+        const item = document.getElementById(id);
+        if (item) {
+          item.classList.remove('text-slate-400');
+          item.classList.add('bg-amber-950/40', 'border-amber-500/40', 'text-amber-300');
+          const icon = item.querySelector('.status-icon');
+          if (icon) {
+            icon.textContent = 'check_circle';
+            icon.classList.remove('text-slate-600');
+            icon.classList.add('text-amber-400');
+          }
+        }
+        document.getElementById('asa-badge').textContent = `${doneMilestones.size} / 3 Complete`;
+      }
+    }
+
+    function appendOutput(text, cls = '') {
+      const body = document.getElementById('asa-output-body');
+      const div = document.createElement('div');
+      div.className = `term-line ${cls}`;
+      div.textContent = text;
+      body.appendChild(div);
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function changeWindowQuery() {
+      updateMilestone('sm1');
+      const val = document.getElementById('sel-window').value;
+      const qDisp = document.getElementById('query-display');
+
+      if (val === 'tumbling') {
+        qDisp.textContent = `SELECT 
+    System.Timestamp() AS WindowEnd,
+    DeviceId,
+    AVG(Temperature) AS AvgTemp,
+    COUNT(*) AS EventCount
+FROM 
+    EventHubInput TIMESTAMP BY EventTime
+GROUP BY 
+    TumblingWindow(second, 10), DeviceId`;
+      } else if (val === 'hopping') {
+        qDisp.textContent = `SELECT 
+    System.Timestamp() AS WindowEnd,
+    DeviceId,
+    AVG(Temperature) AS AvgTemp
+FROM 
+    EventHubInput TIMESTAMP BY EventTime
+GROUP BY 
+    HoppingWindow(second, 10, 5), DeviceId`;
+      } else {
+        qDisp.textContent = `SELECT 
+    System.Timestamp() AS AlertTime,
+    DeviceId,
+    Temperature AS AnomalyTemp
+FROM 
+    EventHubInput TIMESTAMP BY EventTime
+WHERE 
+    Temperature > 35.0`;
+      }
+    }
+
+    function startAsaJob() {
+      if (isJobRunning) return;
+      isJobRunning = true;
+      updateMilestone('sm2');
+
+      document.getElementById('job-state-badge').textContent = 'JOB RUNNING (6 SU)';
+      document.getElementById('job-state-badge').className = 'text-xs font-mono font-bold text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/40';
+
+      appendOutput('[ASA Job Engine] Initialized with 6 Streaming Units. Listening to EventHubInput...', 'text-slate-400');
+      appendOutput('[ASA Job Engine] Ingesting unbounded telemetry stream...', 'text-slate-400');
+
+      timerId = setInterval(() => {
+        emittedCount++;
+        document.getElementById('records-emitted').textContent = `Emitted: ${emittedCount} records`;
+        const devId = `DEV-0${Math.floor(Math.random() * 4 + 1)}`;
+        const avg = (24.0 + Math.random() * 4.0).toFixed(1);
+        const winTime = new Date().toLocaleTimeString();
+
+        appendOutput(`[${winTime}] Window Closed | Device: ${devId} | AvgTemp: ${avg}°C | Events: ${Math.floor(Math.random() * 8 + 4)}`, 'text-amber-300');
+      }, 3000);
+    }
+
+    function stopAsaJob() {
+      if (!isJobRunning) return;
+      clearInterval(timerId);
+      isJobRunning = false;
+      document.getElementById('job-state-badge').textContent = 'JOB STOPPED';
+      document.getElementById('job-state-badge').className = 'text-xs font-mono font-bold text-slate-400 px-2 py-0.5 rounded bg-slate-800 border border-slate-700';
+      appendOutput('[ASA Job Engine] Job stopped. State checkpoints persisted to ADLS Gen2.', 'text-rose-400');
+    }
+
+    function injectAnomaly() {
+      if (!isJobRunning) {
+        alert('Please start the ASA job first!');
+        return;
+      }
+      updateMilestone('sm3');
+      appendOutput(`🚨 [CRITICAL ALERT] Temperature Threshold Exceeded! Device DEV-02 Temperature=42.8°C at ${new Date().toLocaleTimeString()}`, 'text-rose-400 font-bold');
+      appendOutput(`&rarr; Emitted alert record to Service Bus Queue & Notification Hub.`, 'text-rose-300');
+    }
+  </script>
+</body>
+</html>

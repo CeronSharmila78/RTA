@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Experiment 1: Jetson Nano Hardware & OS Setup | Edge AI Virtual Lab</title>
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#10b981", // Emerald 500 for Jetson
+            "primary-dark": "#059669",
+            "background-dark": "#0f172a",
+            "card-dark": "#1e293b",
+            "text-dark": "#94a3b8"
+          },
+          fontFamily: {
+            display: ["Roboto", "sans-serif"],
+            body: ["Inter", "sans-serif"],
+            mono: ["Fira Code", "monospace"]
+          },
+        },
+      },
+    };
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/custom.css">
+
+  <style>
+    .split-guide { overflow-y: auto; max-height: calc(100vh - 3.5rem); }
+    .split-sandbox { overflow-y: auto; max-height: calc(100vh - 3.5rem); }
+    .board-chip {
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      border: 1px solid #334155;
+      transition: all 0.3s ease;
+    }
+    .board-chip.active {
+      border-color: #10b981;
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+    }
+    .status-led {
+      width: 10px; height: 10px; border-radius: 50%;
+      background-color: #ef4444;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+      transition: all 0.3s ease;
+    }
+    .status-led.on {
+      background-color: #10b981;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.9);
+    }
+  </style>
+</head>
+
+<body class="bg-background-dark font-display text-slate-100 antialiased h-screen">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-6 py-3 bg-emerald-700 shadow-lg sticky top-0 z-50 h-14">
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined !text-2xl text-white">memory</span>
+      <div>
+        <h1 class="text-lg font-bold text-white">Experiment 1: Jetson Nano Hardware & OS Setup</h1>
+        <p class="text-xs text-emerald-100 font-normal">NVIDIA JetPack &middot; Power Jumper (J48) &middot; Linux Tegra L4T</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="jetson-nano-placeholder.html" class="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-semibold transition text-white">
+        <span class="material-symbols-outlined !text-base">arrow_back</span>
+        <span>Back to Module 3</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Split Screen -->
+  <div class="flex flex-col lg:flex-row" style="height: calc(100vh - 3.5rem);">
+
+    <!-- LEFT PANE: Lab Manual & Architecture Theory -->
+    <div class="split-guide w-full lg:w-1/2 h-full bg-background-dark border-r border-slate-800 p-6 sm:p-8">
+
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-4 border border-emerald-500/20">
+        Module 3 &middot; Edge AI Hardware
+      </div>
+
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-3">NVIDIA Jetson Nano Architecture & Configuration</h2>
+      <p class="text-text-dark font-body text-sm leading-relaxed mb-6">
+        The <strong class="text-white">NVIDIA Jetson Nano Developer Kit</strong> brings accelerated modern AI compute to the IoT edge. Powered by a 128-core NVIDIA Maxwell GPU and a Quad-core ARM Cortex-A57 CPU, it runs full Linux (Ubuntu 18.04/20.04 Tegra L4T) supporting CUDA, cuDNN, and TensorRT.
+      </p>
+
+      <!-- Aim -->
+      <div class="bg-slate-900/90 border border-emerald-500/40 rounded-2xl p-5 mb-6 shadow-lg">
+        <h3 class="text-base font-bold text-emerald-400 flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined !text-lg">flag</span> Aim of the Experiment
+        </h3>
+        <p class="text-sm text-slate-300 font-body leading-relaxed">
+          To assemble and configure the NVIDIA Jetson Nano edge computing system: install the MicroSD card loaded with NVIDIA JetPack, configure power jumper J48 (5V/4A DC Barrel Jack 10W mode vs. Micro-USB 5W mode), attach a MIPI-CSI camera, boot Linux, and verify system performance with <code>tegrastats</code> and <code>nvpmodel</code>.
+        </p>
+      </div>
+
+      <!-- Hardware Specs & Architecture Diagram -->
+      <div class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-5 mb-6">
+        <h3 class="text-base font-bold text-slate-200 flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined !text-lg text-emerald-400">developer_board</span>
+          Hardware Block Diagram
+        </h3>
+
+        <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 text-xs font-mono space-y-3">
+          <div class="grid grid-cols-2 gap-3 text-center">
+            <div class="p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-lg">
+              <span class="text-emerald-400 font-bold block text-sm">128-Core Maxwell GPU</span>
+              <span class="text-[11px] text-slate-400">472 GFLOPS FP16 AI Compute</span>
+            </div>
+            <div class="p-3 bg-blue-950/40 border border-blue-500/30 rounded-lg">
+              <span class="text-blue-400 font-bold block text-sm">Quad-Core ARM A57</span>
+              <span class="text-[11px] text-slate-400">1.43 GHz 64-bit CPU &middot; 4GB LPDDR4</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center text-[10px]">
+            <div class="p-2 bg-slate-900 border border-slate-800 rounded">MIPI CSI-2 (2-lane)</div>
+            <div class="p-2 bg-slate-900 border border-slate-800 rounded">40-Pin GPIO Header</div>
+            <div class="p-2 bg-slate-900 border border-slate-800 rounded">Gigabit LAN & USB 3.0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Power Mode Theory -->
+      <div class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-5 mb-6">
+        <h3 class="text-base font-bold text-slate-200 flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined !text-lg text-amber-400">power</span>
+          Power Modes & Jumper J48 Configuration
+        </h3>
+        <p class="text-xs sm:text-sm text-slate-300 font-body leading-relaxed mb-3">
+          The Jetson Nano supports two power inputs and two software operational modes:
+        </p>
+        <ul class="text-xs space-y-2 text-slate-400 font-body list-disc pl-5">
+          <li><strong class="text-white">Micro-USB (5V / 2A = 10W max total, default 5W mode):</strong> J48 jumper pin open. Limits CPU/GPU clock frequencies to avoid voltage drops.</li>
+          <li><strong class="text-white">DC Barrel Jack (5V / 4A = 20W max, 10W MAXN mode):</strong> J48 jumper pin closed. Unlocks full 128 CUDA cores and 1.43 GHz CPU frequency for deep learning computer vision workloads.</li>
+        </ul>
+      </div>
+
+      <!-- Mission Checklist -->
+      <div class="bg-card-dark rounded-xl border border-slate-700 p-4 mb-6 shadow-md">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <span class="material-symbols-outlined !text-base text-emerald-400">checklist</span>
+            Lab Mission Milestones
+          </h3>
+          <span id="milestone-badge" class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold">0 / 4 Complete</span>
+        </div>
+        <div class="space-y-2 text-xs font-body">
+          <div id="m1" class="flex items-center gap-2 p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 status-icon">radio_button_unchecked</span>
+            <span>1. Insert JetPack MicroSD Card & Attach CSI Camera</span>
+          </div>
+          <div id="m2" class="flex items-center gap-2 p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 status-icon">radio_button_unchecked</span>
+            <span>2. Connect 5V/4A DC Power & Boot Ubuntu Tegra L4T</span>
+          </div>
+          <div id="m3" class="flex items-center gap-2 p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 status-icon">radio_button_unchecked</span>
+            <span>3. Configure MAXN 10W Power Mode with <code>nvpmodel</code></span>
+          </div>
+          <div id="m4" class="flex items-center gap-2 p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 status-icon">radio_button_unchecked</span>
+            <span>4. Monitor GPU, CPU, and RAM with <code>tegrastats</code></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANE: Interactive Jetson Nano Sandbox & Live Linux Terminal -->
+    <div class="split-sandbox w-full lg:w-1/2 h-full bg-slate-950 p-6 flex flex-col gap-5">
+
+      <!-- Interactive Board Wiring Console -->
+      <div class="bg-card-dark rounded-2xl p-5 border border-slate-800 shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <span class="status-led" id="power-led"></span>
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Virtual Jetson Nano Board Controls</h3>
+          </div>
+          <span id="board-status-text" class="text-xs font-mono font-bold text-rose-400 px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/30">POWER OFF</span>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3 text-xs">
+          <!-- Button 1: MicroSD Card -->
+          <button id="btn-sd" onclick="toggleSdCard()" class="board-chip p-3 rounded-xl text-left hover:border-emerald-500/60 transition">
+            <div class="text-slate-400 text-[10px] uppercase">Storage</div>
+            <div class="font-bold text-white mt-1 flex items-center justify-between">
+              <span>MicroSD</span>
+              <span class="material-symbols-outlined !text-sm text-slate-500" id="icon-sd">sd_card</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-1" id="state-sd">Not Inserted</div>
+          </button>
+
+          <!-- Button 2: CSI Camera -->
+          <button id="btn-cam" onclick="toggleCamera()" class="board-chip p-3 rounded-xl text-left hover:border-emerald-500/60 transition">
+            <div class="text-slate-400 text-[10px] uppercase">Sensor</div>
+            <div class="font-bold text-white mt-1 flex items-center justify-between">
+              <span>CSI Camera</span>
+              <span class="material-symbols-outlined !text-sm text-slate-500" id="icon-cam">photo_camera</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-1" id="state-cam">Disconnected</div>
+          </button>
+
+          <!-- Button 3: J48 Jumper (Power Mode) -->
+          <button id="btn-j48" onclick="toggleJumper()" class="board-chip p-3 rounded-xl text-left hover:border-emerald-500/60 transition">
+            <div class="text-slate-400 text-[10px] uppercase">J48 Jumper</div>
+            <div class="font-bold text-white mt-1 flex items-center justify-between">
+              <span>5V/4A DC</span>
+              <span class="material-symbols-outlined !text-sm text-slate-500" id="icon-j48">toggle_off</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-1" id="state-j48">Open (Micro-USB 5W)</div>
+          </button>
+
+          <!-- Button 4: Power Switch -->
+          <button id="btn-power" onclick="togglePower()" class="board-chip p-3 rounded-xl text-left hover:border-emerald-500/60 transition bg-emerald-950/20">
+            <div class="text-slate-400 text-[10px] uppercase">Power Switch</div>
+            <div class="font-bold text-emerald-400 mt-1 flex items-center justify-between">
+              <span>System Power</span>
+              <span class="material-symbols-outlined !text-sm text-emerald-400" id="icon-power">power_settings_new</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-1" id="state-power">Press to Boot</div>
+          </button>
+        </div>
+
+        <div class="text-[11px] text-slate-400 bg-slate-900/60 rounded-lg p-2.5 border border-slate-800 flex items-center justify-between">
+          <span id="hint-text">Step 1: Click <strong>MicroSD</strong> to insert JetPack OS, then click <strong>CSI Camera</strong> and <strong>System Power</strong>.</span>
+          <button onclick="resetBoard()" class="text-xs text-slate-400 hover:text-white underline">Reset Board</button>
+        </div>
+      </div>
+
+      <!-- Linux Terminal Window -->
+      <div class="terminal-window flex-1 flex flex-col">
+        <div class="terminal-header">
+          <div class="flex items-center gap-2">
+            <div class="terminal-controls">
+              <span class="terminal-dot dot-red"></span>
+              <span class="terminal-dot dot-yellow"></span>
+              <span class="terminal-dot dot-green"></span>
+            </div>
+            <span class="text-xs font-bold text-slate-300 font-mono ml-2">jetson@nano-desktop: ~ (Ubuntu 18.04 LTS / L4T 32.7)</span>
+          </div>
+          <span id="term-status-badge" class="text-[10px] px-2 py-0.5 rounded font-bold uppercase" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4)">Offline</span>
+        </div>
+
+        <div class="terminal-body terminal-body-exp" id="jetson-term-body">
+          <div class="term-line term-info">Jetson Nano Serial Console ready.</div>
+          <div class="term-line" style="color:#64748b">Board power is currently OFF. Complete hardware connection and press 'System Power' to boot Linux kernel.</div>
+        </div>
+
+        <!-- Terminal Input & Action Buttons -->
+        <div class="p-3 bg-slate-900 border-t border-slate-800">
+          <div class="terminal-prompt-line flex items-center gap-2">
+            <span class="term-cmd font-mono text-xs text-emerald-400 flex-shrink-0" id="term-prompt">jetson@nano:~$</span>
+            <input type="text" id="jetson-input" class="bg-slate-950/80 border border-slate-700/60 rounded px-2.5 py-1 text-slate-200 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 w-full font-mono text-xs" placeholder="type 'cat /etc/nv_tegra_release', 'sudo nvpmodel -q', 'tegrastats'..." onkeydown="handleInput(event)" disabled />
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="flex flex-wrap gap-1.5 mt-2.5">
+            <button onclick="executeCommand('cat /etc/nv_tegra_release')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-emerald-300 rounded border border-slate-700 transition">cat /etc/nv_tegra_release</button>
+            <button onclick="executeCommand('sudo nvpmodel -q')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-emerald-300 rounded border border-slate-700 transition">sudo nvpmodel -q</button>
+            <button onclick="executeCommand('sudo nvpmodel -m 0')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-amber-300 rounded border border-slate-700 transition">sudo nvpmodel -m 0 (10W MAXN)</button>
+            <button onclick="executeCommand('tegrastats')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-emerald-300 rounded border border-slate-700 transition">tegrastats</button>
+            <button onclick="executeCommand('ls -l /dev/video0')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-sky-300 rounded border border-slate-700 transition">ls -l /dev/video0</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let sdInserted = false;
+    let camAttached = false;
+    let jumperClosed = false;
+    let powerOn = false;
+    let currentPowerMode = "1 (5W)";
+    let doneMilestones = new Set();
+
+    function updateMilestone(id) {
+      if (!doneMilestones.has(id)) {
+        doneMilestones.add(id);
+        const item = document.getElementById(id);
+        if (item) {
+          item.classList.remove('text-slate-400');
+          item.classList.add('bg-emerald-950/40', 'border-emerald-500/40', 'text-emerald-300');
+          const icon = item.querySelector('.status-icon');
+          if (icon) {
+            icon.textContent = 'check_circle';
+            icon.classList.remove('text-slate-600');
+            icon.classList.add('text-emerald-400');
+          }
+        }
+        document.getElementById('milestone-badge').textContent = `${doneMilestones.size} / 4 Complete`;
+      }
+    }
+
+    function appendTerm(text, cls = '') {
+      const body = document.getElementById('jetson-term-body');
+      const div = document.createElement('div');
+      div.className = `term-line ${cls}`;
+      div.textContent = text;
+      body.appendChild(div);
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function toggleSdCard() {
+      sdInserted = !sdInserted;
+      const btn = document.getElementById('btn-sd');
+      const icon = document.getElementById('icon-sd');
+      const state = document.getElementById('state-sd');
+      if (sdInserted) {
+        btn.classList.add('active');
+        icon.classList.replace('text-slate-500', 'text-emerald-400');
+        state.textContent = 'JetPack 4.6 (64GB)';
+        state.classList.add('text-emerald-400');
+      } else {
+        btn.classList.remove('active');
+        icon.classList.replace('text-emerald-400', 'text-slate-500');
+        state.textContent = 'Not Inserted';
+        state.classList.remove('text-emerald-400');
+      }
+      checkMilestone1();
+    }
+
+    function toggleCamera() {
+      camAttached = !camAttached;
+      const btn = document.getElementById('btn-cam');
+      const icon = document.getElementById('icon-cam');
+      const state = document.getElementById('state-cam');
+      if (camAttached) {
+        btn.classList.add('active');
+        icon.classList.replace('text-slate-500', 'text-emerald-400');
+        state.textContent = 'Sony IMX219 (MIPI CSI)';
+        state.classList.add('text-emerald-400');
+      } else {
+        btn.classList.remove('active');
+        icon.classList.replace('text-emerald-400', 'text-slate-500');
+        state.textContent = 'Disconnected';
+        state.classList.remove('text-emerald-400');
+      }
+      checkMilestone1();
+    }
+
+    function checkMilestone1() {
+      if (sdInserted && camAttached) {
+        updateMilestone('m1');
+        document.getElementById('hint-text').innerHTML = 'Hardware ready! Now close <strong>J48 Jumper</strong> for 5V/4A mode and click <strong>System Power</strong>.';
+      }
+    }
+
+    function toggleJumper() {
+      jumperClosed = !jumperClosed;
+      const btn = document.getElementById('btn-j48');
+      const icon = document.getElementById('icon-j48');
+      const state = document.getElementById('state-j48');
+      if (jumperClosed) {
+        btn.classList.add('active');
+        icon.textContent = 'toggle_on';
+        icon.classList.replace('text-slate-500', 'text-emerald-400');
+        state.textContent = 'Closed (5V/4A Barrel 10W)';
+        state.classList.add('text-emerald-400');
+      } else {
+        btn.classList.remove('active');
+        icon.textContent = 'toggle_off';
+        icon.classList.replace('text-emerald-400', 'text-slate-500');
+        state.textContent = 'Open (Micro-USB 5W)';
+        state.classList.remove('text-emerald-400');
+      }
+    }
+
+    function togglePower() {
+      if (!sdInserted) {
+        alert('Cannot boot: No MicroSD card inserted! Click the MicroSD button first.');
+        return;
+      }
+      powerOn = !powerOn;
+      const pLed = document.getElementById('power-led');
+      const bStatus = document.getElementById('board-status-text');
+      const tBadge = document.getElementById('term-status-badge');
+      const inp = document.getElementById('jetson-input');
+      const state = document.getElementById('state-power');
+
+      if (powerOn) {
+        pLed.classList.add('on');
+        bStatus.textContent = jumperClosed ? 'RUNNING (5V/4A 10W)' : 'RUNNING (5V/2A 5W)';
+        bStatus.className = 'text-xs font-mono font-bold text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30';
+        tBadge.textContent = 'ONLINE';
+        tBadge.style = 'background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.4)';
+        inp.disabled = false;
+        state.textContent = 'System Active';
+
+        appendTerm('[    0.000000] Booting Linux on physical CPU 0x0000000000 [0x411fd071]');
+        appendTerm('[    0.284912] Tegra SoC: tegra210 (t210), board: P3450-0000');
+        appendTerm('[    1.102384] Memory: 3982464K/4194304K available (4096MB LPDDR4)');
+        appendTerm('[    2.410982] imx219 6-0010: camera subdev registered on CSI bus 0 (/dev/video0)');
+        appendTerm('[    3.891240] Systemd 237 running in system mode. Network: eth0 UP 1000Mbps');
+        appendTerm('Ubuntu 18.04.6 LTS nano-desktop tty1');
+        appendTerm('jetson@nano-desktop:~$ (Logged in as user jetson)', 'text-emerald-400');
+        updateMilestone('m2');
+      } else {
+        pLed.classList.remove('on');
+        bStatus.textContent = 'POWER OFF';
+        bStatus.className = 'text-xs font-mono font-bold text-rose-400 px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/30';
+        tBadge.textContent = 'OFFLINE';
+        tBadge.style = 'background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4)';
+        inp.disabled = true;
+        state.textContent = 'Press to Boot';
+        appendTerm('[Power Off] System shutdown cleanly.', 'text-rose-400');
+      }
+    }
+
+    function executeCommand(cmd) {
+      if (!powerOn) {
+        alert('Please power ON the Jetson Nano board first!');
+        return;
+      }
+      appendTerm(`jetson@nano:~$ ${cmd}`, 'text-slate-300 font-bold');
+
+      if (cmd.includes('nv_tegra_release')) {
+        appendTerm('# R32 (release), REVISION: 7.1, GCID: 29818804, BOARD: t210ref, EABI: aarch64');
+        appendTerm('MODULE: P3448, HOST: Tegra Linux Driver Package (L4T) JetPack 4.6.1');
+      } else if (cmd.includes('nvpmodel -q')) {
+        appendTerm(`NVPM WARN: power mode is set to: ${currentPowerMode}`);
+        appendTerm('NV Power Mode: ' + (currentPowerMode.startsWith('0') ? 'MAXN (10W)' : '5W'));
+        appendTerm('<0> MAXN     (10W CPU @ 1.43GHz, GPU @ 921MHz, 4 cores online)');
+        appendTerm('<1> 5W       (5W  CPU @ 918MHz,  GPU @ 640MHz, 2 cores online)');
+      } else if (cmd.includes('nvpmodel -m 0')) {
+        currentPowerMode = "0 (MAXN)";
+        appendTerm('Switching to power mode 0 (MAXN 10W)...');
+        appendTerm('[OK] CPU online cores: 4/4. Max Clock: 1479 MHz');
+        appendTerm('[OK] 128-core Maxwell GPU unlocked to 921.6 MHz.');
+        updateMilestone('m3');
+      } else if (cmd.includes('nvpmodel -m 1')) {
+        currentPowerMode = "1 (5W)";
+        appendTerm('Switching to power mode 1 (5W energy-saving)...');
+        appendTerm('[OK] CPU online cores: 2/4. Max Clock: 918 MHz');
+      } else if (cmd.includes('tegrastats')) {
+        appendTerm('RAM 1342/3964MB (lfb 428x4MB) SWAP 0/2048MB (cached 0MB)');
+        appendTerm('CPU [12%@1479,8%@1479,15%@1479,10%@1479] EMC_FREQ 0% GR3D_FREQ 35%@921');
+        appendTerm('PLL@38C CPU@40C PMIC@100C GPU@39.5C AO@42C thermal@40C');
+        appendTerm('POM_5V_IN 3824/3824 POM_5V_GPU 1420/1420 POM_5V_CPU 940/940');
+        updateMilestone('m4');
+      } else if (cmd.includes('video0')) {
+        if (camAttached) {
+          appendTerm('crw-rw----+ 1 root video 81, 0 Oct 30 11:30 /dev/video0');
+          appendTerm('Device: NVIDIA Tegra Video Input (Sony IMX219 CSI camera)');
+        } else {
+          appendTerm('ls: cannot access \'/dev/video0\': No such file or directory');
+        }
+      } else {
+        appendTerm(`bash: ${cmd}: command executed successfully.`);
+      }
+    }
+
+    function handleInput(e) {
+      if (e.key === 'Enter') {
+        const val = e.target.value.trim();
+        if (val) {
+          executeCommand(val);
+          e.target.value = '';
+        }
+      }
+    }
+
+    function resetBoard() {
+      sdInserted = false;
+      camAttached = false;
+      jumperClosed = false;
+      powerOn = false;
+      currentPowerMode = "1 (5W)";
+      doneMilestones.clear();
+      document.getElementById('milestone-badge').textContent = '0 / 4 Complete';
+      ['m1', 'm2', 'm3', 'm4'].forEach(id => {
+        const item = document.getElementById(id);
+        if (item) {
+          item.className = 'flex items-center gap-2 p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400';
+          const icon = item.querySelector('.status-icon');
+          if (icon) {
+            icon.textContent = 'radio_button_unchecked';
+            icon.className = 'material-symbols-outlined !text-base text-slate-600 status-icon';
+          }
+        }
+      });
+      document.getElementById('jetson-term-body').innerHTML = '<div class="term-line term-info">Jetson Nano Serial Console reset. Complete board wiring to boot.</div>';
+    }
+  </script>
+</body>
+</html>

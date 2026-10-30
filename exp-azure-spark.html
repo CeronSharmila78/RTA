@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Experiment 5 & 6: Spark Micro-Batching & ADLS Lake | Virtual Lab</title>
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#f97316", // Orange 500 for Spark
+            "primary-dark": "#ea580c",
+            "background-dark": "#0f172a",
+            "card-dark": "#1e293b",
+            "text-dark": "#94a3b8"
+          },
+          fontFamily: {
+            display: ["Roboto", "sans-serif"],
+            body: ["Inter", "sans-serif"],
+            mono: ["Fira Code", "monospace"]
+          },
+        },
+      },
+    };
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/custom.css">
+
+  <style>
+    .split-guide { overflow-y: auto; max-height: calc(100vh - 3.5rem); }
+    .split-sandbox { overflow-y: auto; max-height: calc(100vh - 3.5rem); }
+  </style>
+</head>
+
+<body class="bg-background-dark font-display text-slate-100 antialiased h-screen">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-6 py-3 bg-orange-700 shadow-lg sticky top-0 z-50 h-14">
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined !text-2xl text-white">layers</span>
+      <div>
+        <h1 class="text-lg font-bold text-white">Experiment 5 & 6: Spark Micro-Batching & ADLS Lake Batch</h1>
+        <p class="text-xs text-orange-100 font-normal">PySpark DStreams &middot; RDD Lineage &middot; updateStateByKey &middot; U-SQL</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="azure-simulator.html" class="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition text-white">
+        <span class="material-symbols-outlined !text-base">cloud</span>
+        <span>Cloud Simulator</span>
+      </a>
+      <a href="azure-lab-placeholder.html" class="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-semibold transition text-white">
+        <span class="material-symbols-outlined !text-base">arrow_back</span>
+        <span>Back to Module 2</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Split Screen -->
+  <div class="flex flex-col lg:flex-row" style="height: calc(100vh - 3.5rem);">
+
+    <!-- LEFT PANE: Lab Manual & Theory -->
+    <div class="split-guide w-full lg:w-1/2 h-full bg-background-dark border-r border-slate-800 p-6 sm:p-8">
+
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 text-orange-400 text-xs font-semibold uppercase tracking-wider mb-4 border border-orange-500/20">
+        Module 2 &middot; Chapters 5 & 6 Courseware
+      </div>
+
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-3">Micro-Batching & Data Lake Processing</h2>
+      <p class="text-text-dark font-body text-sm leading-relaxed mb-6">
+        While continuous stream processing treats every tuple independently, <strong class="text-white">Apache Spark Streaming</strong> discretizes continuous streams into small micro-batches of resilient distributed datasets (RDDs). In combination with <strong class="text-white">Azure Data Lake Storage (ADLS Gen2)</strong>, this powers high-throughput batch and stateful analytics.
+      </p>
+
+      <!-- Aim -->
+      <div class="bg-slate-900/90 border border-orange-500/40 rounded-2xl p-5 mb-6 shadow-lg">
+        <h3 class="text-base font-bold text-orange-400 flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined !text-lg">flag</span> Aim of the Experiment
+        </h3>
+        <p class="text-sm text-slate-300 font-body leading-relaxed">
+          To execute PySpark micro-batch transformations using Discretized Streams (DStreams), maintain stateful session totals via <code>updateStateByKey</code>, and inspect parquet dataset storage in the ADLS Gen2 Hierarchical Namespace.
+        </p>
+      </div>
+
+      <!-- DStream Theory -->
+      <div class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-5 mb-6">
+        <h3 class="text-base font-bold text-slate-200 flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined !text-lg text-orange-400">stream</span>
+          DStreams & RDD Mechanics
+        </h3>
+        <p class="text-xs text-slate-300 font-body leading-relaxed mb-3">
+          A DStream is a continuous sequence of RDDs generated at discrete time intervals (e.g. every 2 seconds). Transformations applied to a DStream translate into transformations on each underlying RDD across Spark worker nodes.
+        </p>
+      </div>
+
+      <!-- Mission Checklist -->
+      <div class="bg-card-dark rounded-xl border border-slate-700 p-4 mb-6 shadow-md">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <span class="material-symbols-outlined !text-base text-orange-400">checklist</span>
+            Lab Mission Milestones
+          </h3>
+          <span id="spark-badge" class="text-xs px-2.5 py-0.5 rounded-full bg-orange-500/20 text-orange-300 font-mono font-bold">0 / 3 Complete</span>
+        </div>
+        <div class="space-y-2 text-xs font-body">
+          <div id="spm1" class="flex items-center gap-2 p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 status-icon">radio_button_unchecked</span>
+            <span>1. Initialize PySpark StreamingContext with 2s Batch Duration</span>
+          </div>
+          <div id="spm2" class="flex items-center gap-2 p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 status-icon">radio_button_unchecked</span>
+            <span>2. Execute Stateful <code>updateStateByKey</code> Transformation</span>
+          </div>
+          <div id="spm3" class="flex items-center gap-2 p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 status-icon">radio_button_unchecked</span>
+            <span>3. Inspect Persisted Parquet Data Lake Structure in ADLS Gen2</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANE: Interactive PySpark Notebook Sandbox & ADLS File Explorer -->
+    <div class="split-sandbox w-full lg:w-1/2 h-full bg-slate-950 p-6 flex flex-col gap-5">
+
+      <!-- PySpark Notebook Environment -->
+      <div class="bg-card-dark rounded-2xl p-5 border border-slate-800 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <span class="material-symbols-outlined text-orange-400">terminal</span>
+            PySpark HDInsight Notebook (Jupyter Kernel)
+          </h3>
+          <span class="text-xs font-mono text-emerald-400">Spark 3.2 on HDInsight</span>
+        </div>
+
+        <div class="space-y-3 font-mono text-xs">
+          <!-- Cell 1 -->
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+            <div class="text-slate-500 mb-1"># [Cell 1] Configure StreamingContext</div>
+            <div class="text-orange-300">from pyspark.streaming import StreamingContext</div>
+            <div class="text-slate-300">ssc = StreamingContext(sc, batchDuration=<span class="text-amber-400">2</span>)</div>
+            <button onclick="runCell(1)" class="mt-2 px-3 py-1 bg-orange-600 hover:bg-orange-500 text-white rounded text-[11px] font-bold transition">▶ Run Cell 1</button>
+          </div>
+
+          <!-- Cell 2 -->
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+            <div class="text-slate-500 mb-1"># [Cell 2] Stateful aggregation across micro-batches</div>
+            <div class="text-purple-300">def update_total(new_vals, running_total):</div>
+            <div class="pl-4 text-slate-300">return sum(new_vals) + (running_total or 0)</div>
+            <div class="text-orange-300 mt-1">state_stream = dstream.updateStateByKey(update_total)</div>
+            <button onclick="runCell(2)" class="mt-2 px-3 py-1 bg-orange-600 hover:bg-orange-500 text-white rounded text-[11px] font-bold transition">▶ Run Cell 2</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Execution Console & ADLS Explorer -->
+      <div class="terminal-window flex-1 flex flex-col">
+        <div class="terminal-header">
+          <div class="flex items-center gap-2">
+            <div class="terminal-controls">
+              <span class="terminal-dot dot-red"></span>
+              <span class="terminal-dot dot-yellow"></span>
+              <span class="terminal-dot dot-green"></span>
+            </div>
+            <span class="text-xs font-bold text-slate-300 font-mono ml-2">Spark Execution Output & ADLS Storage Inspector</span>
+          </div>
+          <button onclick="inspectLake()" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-sky-400 rounded border border-slate-700 font-mono">Browse ADLS Lake</button>
+        </div>
+
+        <div class="terminal-body terminal-body-exp flex-1 bg-slate-950 p-3 font-mono text-xs overflow-y-auto" id="spark-term-body">
+          <div class="term-line term-info">Spark Context initialized. Ready to execute cells.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let doneMilestones = new Set();
+
+    function updateMilestone(id) {
+      if (!doneMilestones.has(id)) {
+        doneMilestones.add(id);
+        const item = document.getElementById(id);
+        if (item) {
+          item.classList.remove('text-slate-400');
+          item.classList.add('bg-orange-950/40', 'border-orange-500/40', 'text-orange-300');
+          const icon = item.querySelector('.status-icon');
+          if (icon) {
+            icon.textContent = 'check_circle';
+            icon.classList.remove('text-slate-600');
+            icon.classList.add('text-orange-400');
+          }
+        }
+        document.getElementById('spark-badge').textContent = `${doneMilestones.size} / 3 Complete`;
+      }
+    }
+
+    function appendTerm(text, cls = '') {
+      const body = document.getElementById('spark-term-body');
+      const div = document.createElement('div');
+      div.className = `term-line ${cls}`;
+      div.textContent = text;
+      body.appendChild(div);
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function runCell(cellNum) {
+      if (cellNum === 1) {
+        appendTerm('[Cell 1 executed] StreamingContext(batchDuration=2s) created.', 'text-orange-400');
+        appendTerm('Spark Driver attached to HDInsight Cluster (4 Worker Nodes, 16 Cores, 64GB RAM).', 'text-slate-400');
+        updateMilestone('spm1');
+      } else if (cellNum === 2) {
+        appendTerm('[Cell 2 executed] updateStateByKey registered.', 'text-orange-400');
+        appendTerm('--- Micro-Batch 1 (t=0s to 2s) ---', 'text-amber-400 font-bold');
+        appendTerm('Device totals: [("DEV-01", 14), ("DEV-02", 9), ("DEV-03", 22)]');
+        appendTerm('--- Micro-Batch 2 (t=2s to 4s) ---', 'text-amber-400 font-bold');
+        appendTerm('Stateful running totals: [("DEV-01", 31), ("DEV-02", 24), ("DEV-03", 45)]', 'text-emerald-400');
+        updateMilestone('spm2');
+      }
+    }
+
+    function inspectLake() {
+      updateMilestone('spm3');
+      appendTerm('abfss://datalake@rtastore.dfs.core.windows.net/ (ADLS Gen2 Tree):', 'text-sky-300 font-bold');
+      appendTerm('├── /raw/telemetry/year=2026/month=10/day=30/ (Avro Partitioned)');
+      appendTerm('├── /curated/analytics_summary/ (Snappy Compressed Parquet)');
+      appendTerm('│   ├── part-00000-c000.snappy.parquet (24.8 MB)');
+      appendTerm('│   └── _SUCCESS (Commit Timestamp: 2026-10-30T11:40:00Z)');
+      appendTerm('└── /checkpoints/spark_state/ (HDFS Metadata)');
+    }
+  </script>
+</body>
+</html>

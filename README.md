@@ -8,14 +8,14 @@
 
 ## 📖 Curriculum Architecture & Modules
 
-The virtual lab is organized into three distinct, high-impact modules:
+The virtual lab is organized into three distinct, high-impact modules with fully executable sandboxes, live terminal simulators, circuit breadboards, and vision inference engines:
 
 ### 🔹 Module 1: Apache Kafka Distributed Systems & Event Streaming
 Comprehensive hands-on labs with KRaft mode, multi-node clustering, and interactive simulations:
 
-| # | Experiment Sandbox | Key Concepts Covered |
+| # | Experiment Sandbox | Key Concepts & Execution Capabilities |
 |---|---|---|
-| **01** | **Single-Node KRaft Setup** (`exp-kraft.html`) | ZooKeeper-less Kafka 4.x setup, UUID generation, formatting log directories, and standalone broker launch. |
+| **01** | **Single-Node KRaft Setup** (`exp-kraft.html`) | ZooKeeper-less Kafka 4.x setup, UUID generation, formatting log directories, and standalone broker launch in interactive CMD terminal. |
 | **02** | **Core Messaging Pipeline** (`exp-pipeline.html`) | Distributed topic creation, console producer/consumer pipelines across 3 nodes, event serialization. |
 | **02b** | **3-Machine Distributed Setup (Deep Manual)** (`exp-multi-machine.html`) | Detailed manual: Machine 1 (Broker/Controller: `192.168.1.10`), Machine 2 (Producer: `192.168.1.20`), Machine 3 (Consumer: `192.168.1.30`), `advertised.listeners`, and firewall rules. |
 | **⭐** | **3-Machine Live Interactive Simulator** (`simulation.html`) | **Full Interactive Virtual Sandbox**: 3 synchronized live CMD terminals, Canvas network switch packet visualizer with glow animations, live commit log inspector, and network bug injector. |
@@ -27,27 +27,27 @@ Comprehensive hands-on labs with KRaft mode, multi-node clustering, and interact
 ---
 
 ### 🔹 Module 2: Microsoft Azure Cloud Analytics (Prescribed Courseware)
-Curriculum based on the 12 chapters of **Mastering Azure Analytics**:
+Curriculum based on the 12 chapters of **Mastering Azure Analytics** with full execution capabilities:
 
-| # | Chapter / Experiment | Azure Technologies & Scope |
-|---|---|---|
-| **01** | **Enterprise Analytics & Pipeline Design** | 5-stage pipeline (Source &rarr; Ingest &rarr; Storage &rarr; Processing &rarr; Delivery), Lambda vs. Kappa architectures. |
-| **02** | **Data Ingestion (Bulk & Streaming)** | Ingest Loading Layer, AzCopy, Azure Import/Export with WAImportExport, and Event Hubs with partition keys. |
-| **03** | **Storing Data in Azure** | Hierarchical namespace in ADLS Gen2, Blob Storage Hot/Cool/Archive tiers, and replication (LRS/ZRS/GRS). |
-| **04** | **Real-Time Processing** | Azure Stream Analytics (ASA) with Tumbling, Hopping, Sliding windows, and Apache Storm on HDInsight. |
-| **05** | **Real-Time Micro-Batching** | Spark Streaming DStreams over RDDs on HDInsight, stateful transformations with `updateStateByKey`. |
-| **06** | **Batch Processing** | Hadoop MapReduce and Apache Hive on HDInsight, Azure Data Lake Analytics (ADLA) with U-SQL. |
-| **07** | **Interactive Querying** | Azure SQL Data Warehouse (Synapse) MPP architecture, Hash/Replicated distributions, and PolyBase. |
-| **08** | **Serving Layer (Hot & Cold Paths)** | Sub-millisecond Speed Layer delivery with Azure Redis Cache, global distribution and 5 consistency levels in Cosmos DB. |
-| **09** | **Intelligence & Machine Learning** | Azure Machine Learning Studio, predictive experiments, R Server on HDInsight, and Cognitive Services APIs. |
-| **10** | **Managing Metadata & Governance** | Avoiding the "Data Swamp", data asset registration, schema discovery, and Azure Data Catalog. |
-| **11** | **Data Protection & Security** | Defense-in-depth, Azure Active Directory (AAD), Role-Based Access Control (RBAC), POSIX ACLs in ADLS, and Key Vault. |
-| **12** | **Performing Analytics with Power BI** | Power BI Desktop dashboards, real-time push-streaming datasets, and end-to-end enterprise reporting. |
+| # | Chapter / Experiment | Executable Sandbox | Azure Technologies & Scope |
+|---|---|---|---|
+| **01 & 02** | **Enterprise Pipeline & Ingestion** | `exp-azure-pipeline.html` | 5-stage pipeline (Source &rarr; Ingest &rarr; Storage &rarr; Processing &rarr; Delivery), Lambda vs. Kappa, Event Hubs partition key distribution, AzCopy bulk migration simulator. |
+| **03 & 04** | **Real-Time Stream Processing (ASA)** | `exp-azure-stream.html` | Interactive Stream Analytics T-SQL query editor, Tumbling, Hopping, and Sliding windows, live telemetry event feeder, alert output sink. |
+| **05 & 06** | **Micro-Batching & Data Lake Batch** | `exp-azure-spark.html` | Interactive PySpark notebook environment, DStreams over RDDs, `updateStateByKey` stateful streaming, ADLS Gen2 directory tree browser. |
+| **07 & 08** | **Synapse MPP & Speed Serving Layer** | `exp-azure-synapse.html` | Synapse SQL DW MPP architecture, Hash vs. Round-Robin distribution, DMS shuffle visualizer, PolyBase external lake scan, Redis Cache 0.4ms speed layer benchmark. |
+| **09 & 12** | **Azure ML & Power BI Real-Time Dashboard** | `exp-azure-ml.html` | Boosted decision tree anomaly scoring, decision threshold tuning, live Power BI push dataset, gauges, trend charts, and fault alert simulator. |
+| **⭐** | **Azure Cloud Console & Pipeline Simulator** | `azure-simulator.html` | **End-to-End Enterprise Operations Console**: Interactive Azure Cloud Shell / Azure CLI, live animated pipeline flow diagram, stage inspector, and traffic spike simulator. |
 
 ---
 
 ### 🔹 Module 3: NVIDIA Jetson Nano Edge AI Lab
-Edge hardware setup, GPIO sensor interfaces, and local deep-learning inference on edge devices (`jetson-nano-placeholder.html` & `quiz-jetson.html`).
+Edge hardware setup, GPIO sensor interfaces, and local deep-learning inference on edge devices:
+
+| # | Experiment Sandbox | Key Concepts & Execution Capabilities |
+|---|---|---|
+| **01** | **Hardware & OS Setup** (`exp-jetson-setup.html`) | Interactive virtual motherboard assembly (MicroSD slot, CSI camera ribbon, J48 power jumper 5W vs 10W MAXN), live Linux bash terminal with `cat /etc/nv_tegra_release`, `nvpmodel -q`, `tegrastats`, and GPU load inspection. |
+| **02** | **IoT Sensor & 40-Pin GPIO** (`exp-jetson-gpio.html`) | Interactive breadboard circuit with animated green LED actuator on Pin 18, tactile push-button sensor on Pin 12, Python `Jetson.GPIO` code editor, and asynchronous interrupt handling. |
+| **03** | **Edge Vision & Deep Learning** (`exp-jetson-vision.html`) | Real-time computer vision simulator: Multi-scene video viewport (SRM Campus Traffic, Pedestrians, Smart Factory), live AI bounding box detection overlay, model selector (YOLOv8, MobileNet-SSD, ResNet), TensorRT FP16/INT8 vs. PyTorch CPU benchmark (62 FPS vs 4.6 FPS). |
 
 ---
 
@@ -84,16 +84,25 @@ Then visit `http://localhost:8000`.
 ```
 ├── index.html                   # Lab Portal (Modules 1, 2, and 3)
 ├── experiments.html             # Module 1: Kafka Curriculum Grid
-├── simulation.html              # 3-Machine Live Interactive Simulator & Visualizer
-├── exp-multi-machine.html       # 3-Machine Distributed Setup Detailed Manual
-├── exp-kraft.html               # Experiment 1 Sandbox (KRaft Setup)
-├── exp-pipeline.html            # Experiment 2 Sandbox (Core Pipeline)
-├── exp-partitions.html          # Experiment 3 Sandbox (Partitions & Offsets)
-├── exp-fault-tolerance.html     # Experiment 4 Sandbox (Resilience & ISRs)
-├── exp-python.html              # Experiment 5 Sandbox (Python Streaming)
-├── exp-video.html               # Experiment 6 Sandbox (OpenCV Video Capstone)
+├── simulation.html              # Module 1: 3-Machine Live Interactive Simulator & Visualizer
+├── exp-multi-machine.html       # Module 1: 3-Machine Distributed Setup Detailed Manual
+├── exp-kraft.html               # Module 1: Experiment 1 Sandbox (KRaft Setup)
+├── exp-pipeline.html            # Module 1: Experiment 2 Sandbox (Core Pipeline)
+├── exp-partitions.html          # Module 1: Experiment 3 Sandbox (Partitions & Offsets)
+├── exp-fault-tolerance.html     # Module 1: Experiment 4 Sandbox (Resilience & ISRs)
+├── exp-python.html              # Module 1: Experiment 5 Sandbox (Python Streaming)
+├── exp-video.html               # Module 1: Experiment 6 Sandbox (OpenCV Video Capstone)
 ├── azure-lab-placeholder.html   # Module 2: Azure Analytics Lab (12 Experiments)
+├── azure-simulator.html         # Module 2: Azure Cloud Analytics End-to-End Pipeline Simulator
+├── exp-azure-pipeline.html      # Module 2: Experiment 1 & 2 Sandbox (Event Hubs & Ingestion)
+├── exp-azure-stream.html        # Module 2: Experiment 4 Sandbox (Stream Analytics & Windows)
+├── exp-azure-spark.html         # Module 2: Experiment 5 & 6 Sandbox (Spark & Data Lake)
+├── exp-azure-synapse.html       # Module 2: Experiment 7 & 8 Sandbox (Synapse MPP & Serving)
+├── exp-azure-ml.html            # Module 2: Experiment 9 & 12 Sandbox (Azure ML & Power BI)
 ├── jetson-nano-placeholder.html # Module 3: NVIDIA Jetson Nano Lab
+├── exp-jetson-setup.html        # Module 3: Experiment 1 Sandbox (Hardware & OS Setup)
+├── exp-jetson-gpio.html         # Module 3: Experiment 2 Sandbox (40-Pin GPIO & Breadboard)
+├── exp-jetson-vision.html       # Module 3: Experiment 3 Sandbox (Edge Vision & TensorRT)
 ├── quiz.html & quiz-kafka.html  # Kafka Quizzes with score engine
 ├── quiz-azure.html              # Azure Module Quiz
 ├── quiz-jetson.html             # Jetson Nano Module Quiz

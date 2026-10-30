@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Azure Analytics Live Interactive Cloud Simulator | Virtual Lab</title>
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#0ea5e9", // Sky 500 for Azure
+            "primary-dark": "#0284c7",
+            "background-dark": "#0f172a",
+            "card-dark": "#1e293b",
+            "text-dark": "#94a3b8"
+          },
+          fontFamily: {
+            display: ["Roboto", "sans-serif"],
+            body: ["Inter", "sans-serif"],
+            mono: ["Fira Code", "monospace"]
+          },
+        },
+      },
+    };
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/custom.css">
+
+  <style>
+    .pipeline-stage {
+      transition: all 0.3s ease;
+      background: #1e293b;
+      border: 1px solid #334155;
+    }
+    .pipeline-stage.active {
+      border-color: #0ea5e9;
+      box-shadow: 0 0 20px rgba(14, 165, 233, 0.35);
+      background: rgba(14, 165, 233, 0.08);
+    }
+    .flow-arrow {
+      color: #64748b;
+      font-size: 1.25rem;
+      animation: pulseArrow 1.5s infinite;
+    }
+    @keyframes pulseArrow {
+      0%, 100% { opacity: 0.4; transform: translateX(0); }
+      50% { opacity: 1; transform: translateX(3px); color: #0ea5e9; }
+    }
+  </style>
+</head>
+
+<body class="bg-background-dark font-display text-slate-100 antialiased min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-6 py-3 bg-sky-700 shadow-lg sticky top-0 z-50 h-14">
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined !text-2xl text-white">cloud</span>
+      <div>
+        <h1 class="text-lg font-bold text-white">Azure Cloud Analytics &middot; End-to-End Pipeline Simulator</h1>
+        <p class="text-xs text-sky-100 font-normal">Lambda & Kappa Engine &middot; Event Hubs &middot; Stream Analytics &middot; Synapse MPP &middot; Power BI</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <button onclick="resetSimulator()" class="rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 px-3 py-1.5 text-xs font-semibold transition flex items-center gap-1">
+        <span class="material-symbols-outlined !text-sm">restart_alt</span>
+        Reset
+      </button>
+      <a href="azure-lab-placeholder.html" class="rounded-lg bg-white/20 hover:bg-white/30 text-white px-3.5 py-1.5 text-xs font-bold transition flex items-center gap-1 shadow">
+        <span class="material-symbols-outlined !text-base">arrow_back</span>
+        Curriculum Catalog
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="flex-1 p-4 sm:p-6 max-w-[1700px] w-full mx-auto space-y-6">
+
+    <!-- Top: Live Visual Pipeline Flow Diagram -->
+    <div class="bg-card-dark rounded-2xl p-5 border border-slate-800 shadow-xl">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-sky-400">account_tree</span>
+          <h2 class="text-sm font-bold text-white uppercase tracking-wider">Enterprise Data Pipeline Architecture (Prescribed Book Architecture)</h2>
+        </div>
+        <div class="flex items-center gap-3 text-xs font-mono">
+          <span id="pipeline-status" class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">PIPELINE ACTIVE</span>
+          <span id="events-rate" class="px-2.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">Events: 2,450 /sec</span>
+        </div>
+      </div>
+
+      <!-- Pipeline Stages Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-center text-xs font-body">
+        
+        <!-- Stage 1: Ingestion -->
+        <div id="stage-ingest" class="pipeline-stage active rounded-xl p-3.5 cursor-pointer" onclick="inspectStage('ingest')">
+          <div class="flex items-center justify-between text-sky-400 mb-1">
+            <span class="text-[10px] font-mono uppercase font-bold">1. Ingestion</span>
+            <span class="material-symbols-outlined !text-base">hub</span>
+          </div>
+          <div class="font-bold text-white text-sm">Azure Event Hubs</div>
+          <div class="text-[11px] text-slate-400 mt-1">4 Partitions &middot; 32 TU</div>
+          <div class="text-[10px] text-emerald-400 mt-2 font-mono">Ingest: 1.8 MB/s</div>
+        </div>
+
+        <!-- Stage 2: Data Lake Storage -->
+        <div id="stage-storage" class="pipeline-stage active rounded-xl p-3.5 cursor-pointer" onclick="inspectStage('storage')">
+          <div class="flex items-center justify-between text-indigo-400 mb-1">
+            <span class="text-[10px] font-mono uppercase font-bold">2. Storage</span>
+            <span class="material-symbols-outlined !text-base">dns</span>
+          </div>
+          <div class="font-bold text-white text-sm">ADLS Gen2 Lake</div>
+          <div class="text-[11px] text-slate-400 mt-1">Hierarchical Namespace</div>
+          <div class="text-[10px] text-indigo-400 mt-2 font-mono">Size: 4.8 TB &middot; LRS</div>
+        </div>
+
+        <!-- Stage 3: Speed Processing -->
+        <div id="stage-stream" class="pipeline-stage active rounded-xl p-3.5 cursor-pointer" onclick="inspectStage('stream')">
+          <div class="flex items-center justify-between text-amber-400 mb-1">
+            <span class="text-[10px] font-mono uppercase font-bold">3. Speed Layer</span>
+            <span class="material-symbols-outlined !text-base">bolt</span>
+          </div>
+          <div class="font-bold text-white text-sm">Stream Analytics</div>
+          <div class="text-[11px] text-slate-400 mt-1">Tumbling Windows (10s)</div>
+          <div class="text-[10px] text-amber-400 mt-2 font-mono">Latency: 18 ms</div>
+        </div>
+
+        <!-- Stage 4: Batch Processing -->
+        <div id="stage-batch" class="pipeline-stage active rounded-xl p-3.5 cursor-pointer" onclick="inspectStage('batch')">
+          <div class="flex items-center justify-between text-orange-400 mb-1">
+            <span class="text-[10px] font-mono uppercase font-bold">4. Batch Layer</span>
+            <span class="material-symbols-outlined !text-base">layers</span>
+          </div>
+          <div class="font-bold text-white text-sm">Spark & HDInsight</div>
+          <div class="text-[11px] text-slate-400 mt-1">DStreams & MapReduce</div>
+          <div class="text-[10px] text-orange-400 mt-2 font-mono">Batch: Every 15 min</div>
+        </div>
+
+        <!-- Stage 5: Serving Layer & MPP -->
+        <div id="stage-serving" class="pipeline-stage active rounded-xl p-3.5 cursor-pointer" onclick="inspectStage('serving')">
+          <div class="flex items-center justify-between text-teal-400 mb-1">
+            <span class="text-[10px] font-mono uppercase font-bold">5. Serving / DW</span>
+            <span class="material-symbols-outlined !text-base">database</span>
+          </div>
+          <div class="font-bold text-white text-sm">Synapse & Redis</div>
+          <div class="text-[11px] text-slate-400 mt-1">MPP Hash Dist & Cache</div>
+          <div class="text-[10px] text-teal-400 mt-2 font-mono">Cache Hit: 0.4 ms</div>
+        </div>
+
+        <!-- Stage 6: Intelligence & Delivery -->
+        <div id="stage-delivery" class="pipeline-stage active rounded-xl p-3.5 cursor-pointer" onclick="inspectStage('delivery')">
+          <div class="flex items-center justify-between text-pink-400 mb-1">
+            <span class="text-[10px] font-mono uppercase font-bold">6. Delivery</span>
+            <span class="material-symbols-outlined !text-base">insights</span>
+          </div>
+          <div class="font-bold text-white text-sm">Azure ML & Power BI</div>
+          <div class="text-[11px] text-slate-400 mt-1">Real-Time Push Dashboards</div>
+          <div class="text-[10px] text-pink-400 mt-2 font-mono">Refresh: Sub-second</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Middle: Split Screen - Cloud Shell CLI + Telemetry Dashboard -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Left: Interactive Azure CLI / Cloud Shell (7 Cols) -->
+      <div class="lg:col-span-7 terminal-window flex flex-col min-h-[460px]">
+        <div class="terminal-header">
+          <div class="flex items-center gap-2">
+            <div class="terminal-controls">
+              <span class="terminal-dot dot-red"></span>
+              <span class="terminal-dot dot-yellow"></span>
+              <span class="terminal-dot dot-green"></span>
+            </div>
+            <span class="text-xs font-bold text-slate-300 font-mono ml-2">Azure Cloud Shell (Bash &middot; Azure CLI v2.48.0 &middot; Subscription: srmist-analytics-sub)</span>
+          </div>
+          <span class="text-[10px] px-2 py-0.5 rounded font-bold uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">Connected</span>
+        </div>
+
+        <div class="terminal-body terminal-body-exp flex-1 bg-slate-950 p-4 font-mono text-xs overflow-y-auto" id="azure-term-body">
+          <div class="term-line term-info">Azure Cloud Shell 2.48.0 &mdash; Environment: East US 2</div>
+          <div class="term-line term-info">Resource Group: <span class="text-sky-300">rg-rta-virtual-lab</span></div>
+          <div class="term-line text-slate-400 mt-1">Execute commands below to provision, query, or stress-test the Azure Analytics pipeline.</div>
+        </div>
+
+        <!-- Input Row -->
+        <div class="p-3 bg-slate-900 border-t border-slate-800">
+          <div class="terminal-prompt-line flex items-center gap-2">
+            <span class="term-cmd font-mono text-xs text-sky-400 flex-shrink-0">sharmila@azure:~$</span>
+            <input type="text" id="azure-cli-input" class="bg-slate-950/80 border border-slate-700/60 rounded px-2.5 py-1 text-slate-200 focus:ring-1 focus:ring-sky-500 focus:border-sky-500 w-full font-mono text-xs" placeholder="type 'az eventhubs ...', 'az stream-analytics ...', 'az synapse query'..." onkeydown="handleCliInput(event)" />
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="flex flex-wrap gap-1.5 mt-2.5">
+            <button onclick="runCli('az eventhubs eventhub show -g rg-rta -n telemetry-hub')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-sky-300 rounded border border-slate-700 transition">1. az eventhubs show</button>
+            <button onclick="runCli('az storage blob list -c telemetry-raw --account-name rtalakestore')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-indigo-300 rounded border border-slate-700 transition">2. az storage list</button>
+            <button onclick="runCli('az stream-analytics job start -g rg-rta -n telemetry-speed-job')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-amber-300 rounded border border-slate-700 transition">3. az stream-analytics start</button>
+            <button onclick="runCli('az synapse sql query -c dw-pool --query \'SELECT TOP 5 DeviceId, AVG(Speed) FROM VehicleTelemetry GROUP BY DeviceId\'')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-teal-300 rounded border border-slate-700 transition">4. az synapse query</button>
+            <button onclick="triggerTrafficSpike()" class="px-2 py-1 bg-rose-950 hover:bg-rose-900 text-[10px] font-mono text-rose-300 rounded border border-rose-700 font-bold transition">⚡ Trigger Traffic Spike</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Stage Inspector & Real-Time Metrics (5 Cols) -->
+      <div class="lg:col-span-5 bg-card-dark rounded-2xl p-5 border border-slate-800 shadow-xl flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <span class="material-symbols-outlined text-sky-400">query_stats</span>
+              <span id="inspector-title">Active Stage: Azure Event Hubs (Ingest)</span>
+            </h3>
+            <span class="text-xs font-mono text-sky-400" id="inspector-badge">Hot Path</span>
+          </div>
+
+          <div id="inspector-content" class="text-xs font-body space-y-3">
+            <div class="bg-slate-900/80 rounded-xl p-3 border border-slate-800">
+              <div class="font-bold text-white mb-1">Event Hubs Partition Distribution</div>
+              <p class="text-slate-400 leading-relaxed text-[11px]">Incoming streaming events with DeviceId keys are partitioned across 4 AMQP brokers:</p>
+              <div class="grid grid-cols-4 gap-2 mt-2 font-mono text-center text-[10px]">
+                <div class="p-2 bg-slate-800 rounded border border-slate-700">P0: 612 ev/s</div>
+                <div class="p-2 bg-slate-800 rounded border border-slate-700">P1: 598 ev/s</div>
+                <div class="p-2 bg-slate-800 rounded border border-slate-700">P2: 624 ev/s</div>
+                <div class="p-2 bg-slate-800 rounded border border-slate-700">P3: 616 ev/s</div>
+              </div>
+            </div>
+
+            <div class="bg-slate-900/80 rounded-xl p-3 border border-slate-800">
+              <div class="font-bold text-white mb-1">SLA & Latency Breakdown</div>
+              <div class="space-y-1.5 font-mono text-[11px] text-slate-300">
+                <div class="flex justify-between">
+                  <span class="text-slate-400">Ingest Latency:</span>
+                  <span class="text-emerald-400 font-bold">12 ms</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">Speed Layer (ASA Window):</span>
+                  <span class="text-amber-400 font-bold">18 ms</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">Serving Cache (Redis Hit):</span>
+                  <span class="text-teal-400 font-bold">0.4 ms</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">Cold Path (Synapse Query):</span>
+                  <span class="text-sky-400 font-bold">120 ms</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-800 flex items-center justify-between text-xs font-mono text-slate-400">
+          <span>Target Architecture: Lambda Pipeline</span>
+          <span class="text-emerald-400">Health: 100% OK</span>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    function appendCli(text, cls = '') {
+      const body = document.getElementById('azure-term-body');
+      const div = document.createElement('div');
+      div.className = `term-line ${cls}`;
+      div.textContent = text;
+      body.appendChild(div);
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function runCli(cmd) {
+      appendCli(`sharmila@azure:~$ ${cmd}`, 'text-slate-300 font-bold');
+
+      if (cmd.includes('eventhub show')) {
+        appendCli('{\n  "id": "/subscriptions/srmist/resourceGroups/rg-rta/providers/Microsoft.EventHub/namespaces/rtahubns/eventhubs/telemetry-hub",\n  "partitionCount": 4,\n  "status": "Active",\n  "throughputUnits": 32,\n  "messageRetentionInDays": 7\n}', 'text-sky-300');
+      } else if (cmd.includes('storage blob list')) {
+        appendCli('[\n  {"name": "raw/2026/10/30/part-0001.avro", "contentLength": 104857600, "blobType": "BlockBlob", "tier": "Hot"},\n  {"name": "curated/daily_summary_20261029.parquet", "contentLength": 41943040, "tier": "Cool"}\n]', 'text-indigo-300');
+      } else if (cmd.includes('stream-analytics job start')) {
+        appendCli('[OK] Azure Stream Analytics job \'telemetry-speed-job\' started successfully with 6 Streaming Units (SU). Hot Path TumblingWindow listener is active.', 'text-emerald-400');
+      } else if (cmd.includes('synapse sql query')) {
+        appendCli('Executing MPP T-SQL Query on distributed Clustered Columnstore table...\n+----------+----------------+\n| DeviceId | AVG(Speed) kmh |\n+----------+----------------+\n| DEV-901  | 64.2           |\n| DEV-902  | 58.7           |\n| DEV-903  | 72.1           |\n| DEV-904  | 61.5           |\n| DEV-905  | 54.9           |\n+----------+----------------+\n(5 rows returned in 120 ms across 60 compute nodes)', 'text-teal-300');
+      } else {
+        appendCli(`[OK] Command '${cmd}' executed successfully in resource group rg-rta-virtual-lab.`);
+      }
+    }
+
+    function handleCliInput(e) {
+      if (e.key === 'Enter') {
+        const val = e.target.value.trim();
+        if (val) {
+          runCli(val);
+          e.target.value = '';
+        }
+      }
+    }
+
+    function triggerTrafficSpike() {
+      const rate = document.getElementById('events-rate');
+      rate.textContent = 'Events: 14,800 /sec (SPIKE)';
+      rate.className = 'px-2.5 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/40 font-bold';
+
+      appendCli('⚡ [TELEMETRY SPIKE DETECTED] Traffic surged to 14,800 events/second!', 'text-rose-400 font-bold');
+      appendCli('Event Hubs auto-inflating throughput units from 32 -> 64 TU.', 'text-amber-400');
+      appendCli('Stream Analytics parallelized over 18 Streaming Units. Consumer group lag steady at 0 ms.', 'text-emerald-400');
+
+      setTimeout(() => {
+        rate.textContent = 'Events: 2,450 /sec';
+        rate.className = 'px-2.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700';
+      }, 5000);
+    }
+
+    function inspectStage(stage) {
+      document.querySelectorAll('.pipeline-stage').forEach(el => el.classList.remove('active'));
+      const activeEl = document.getElementById(`stage-${stage}`);
+      if (activeEl) activeEl.classList.add('active');
+
+      const title = document.getElementById('inspector-title');
+      const badge = document.getElementById('inspector-badge');
+      const content = document.getElementById('inspector-content');
+
+      const data = {
+        ingest: {
+          title: 'Active Stage: Azure Event Hubs (Ingestion Layer)',
+          badge: 'Hot Path',
+          html: `<div class="bg-slate-900/80 rounded-xl p-3 border border-slate-800">
+            <div class="font-bold text-white mb-1">Event Hubs Partition Distribution</div>
+            <p class="text-slate-400 leading-relaxed text-[11px]">Incoming streaming events with DeviceId keys are partitioned across 4 AMQP brokers:</p>
+            <div class="grid grid-cols-4 gap-2 mt-2 font-mono text-center text-[10px]">
+              <div class="p-2 bg-slate-800 rounded border border-slate-700">P0: 612 ev/s</div>
+              <div class="p-2 bg-slate-800 rounded border border-slate-700">P1: 598 ev/s</div>
+              <div class="p-2 bg-slate-800 rounded border border-slate-700">P2: 624 ev/s</div>
+              <div class="p-2 bg-slate-800 rounded border border-slate-700">P3: 616 ev/s</div>
+            </div>
+          </div>`
+        },
+        storage: {
+          title: 'Active Stage: ADLS Gen2 & Blob Tiers (Storage Layer)',
+          badge: 'Data Lake Store',
+          html: `<div class="bg-slate-900/80 rounded-xl p-3 border border-slate-800">
+            <div class="font-bold text-white mb-1">Hierarchical Namespace Tree</div>
+            <pre class="bg-slate-950 text-indigo-300 p-2 rounded text-[11px] font-mono">/telemetry-datalake\n├── raw/            (Hot Tier - Ingestion Sink)\n├── curated/        (Cool Tier - Cleansed Parquet)\n└── archive/        (Archive Tier - Compliance 7Y)</pre>
+            <div class="text-[11px] text-slate-400 mt-2">Geo-Redundant Replication (GRS) enabled across East US 2 & Central US.</div>
+          </div>`
+        },
+        stream: {
+          title: 'Active Stage: Azure Stream Analytics (Speed Layer)',
+          badge: 'Real-Time Stream',
+          html: `<div class="bg-slate-900/80 rounded-xl p-3 border border-slate-800">
+            <div class="font-bold text-white mb-1">Active T-SQL Stream Query</div>
+            <pre class="bg-slate-950 text-amber-300 p-2 rounded text-[11px] font-mono">SELECT System.Timestamp() AS WinEnd,\n       DeviceId, AVG(Speed) AS AvgSpeed\nFROM   EventHubInput TIMESTAMP BY EventTime\nGROUP BY TumblingWindow(second, 10), DeviceId</pre>
+            <div class="text-[11px] text-slate-400 mt-2">Outputs directly to Power BI Streaming dataset & Redis Cache.</div>
+          </div>`
+        },
+        batch: {
+          title: 'Active Stage: Spark on HDInsight (Batch Layer)',
+          badge: 'Cold Path',
+          html: `<div class="bg-slate-900/80 rounded-xl p-3 border border-slate-800">
+            <div class="font-bold text-white mb-1">Spark Micro-Batch Transformations</div>
+            <p class="text-slate-400 text-[11px]">Computes comprehensive historical rollups over massive datasets in parallel.</p>
+            <div class="mt-2 text-orange-400 font-mono text-[11px]">DStreams RDD Lineage: EventHubReceiver -> updateStateByKey -> ParquetSink</div>
+          </div>`
+        },
+        serving: {
+          title: 'Active Stage: Synapse MPP & Redis Cache (Serving Layer)',
+          badge: 'Speed + Batch Views',
+          html: `<div class="bg-slate-900/80 rounded-xl p-3 border border-slate-800">
+            <div class="font-bold text-white mb-1">Serving Store Selection Matrix</div>
+            <div class="space-y-1 font-mono text-[11px] text-slate-300">
+              <div>&bull; <strong class="text-teal-400">Azure Redis Cache:</strong> Sub-millisecond (0.4ms) hot telemetry queries.</div>
+              <div>&bull; <strong class="text-sky-400">Azure Synapse MPP:</strong> Massively Parallel relational analytics on 60 distributions.</div>
+            </div>
+          </div>`
+        },
+        delivery: {
+          title: 'Active Stage: Power BI & Azure ML (Intelligence & Delivery)',
+          badge: 'Live Dashboard',
+          html: `<div class="bg-slate-900/80 rounded-xl p-3 border border-slate-800">
+            <div class="font-bold text-white mb-1">Power BI Live Push Streaming</div>
+            <p class="text-slate-400 text-[11px]">Dashboards update at sub-second frequency with predictive anomaly scoring from Azure ML.</p>
+            <div class="mt-2 text-pink-400 font-mono text-[11px]">Model Accuracy: 98.4% &middot; Anomaly Precision: 96.7%</div>
+          </div>`
+        }
+      };
+
+      if (data[stage]) {
+        title.textContent = data[stage].title;
+        badge.textContent = data[stage].badge;
+        content.innerHTML = data[stage].html;
+      }
+    }
+
+    function resetSimulator() {
+      inspectStage('ingest');
+      document.getElementById('azure-term-body').innerHTML = '<div class="term-line term-info">Azure Cloud Shell reset. Ready for pipeline operations.</div>';
+    }
+  </script>
+</body>
+</html>

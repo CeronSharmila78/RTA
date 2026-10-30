@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Experiment 9 & 12: Azure ML & Power BI Real-Time Dashboard | Virtual Lab</title>
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#ec4899", // Pink 500 for Power BI / ML
+            "primary-dark": "#db2777",
+            "background-dark": "#0f172a",
+            "card-dark": "#1e293b",
+            "text-dark": "#94a3b8"
+          },
+          fontFamily: {
+            display: ["Roboto", "sans-serif"],
+            body: ["Inter", "sans-serif"],
+            mono: ["Fira Code", "monospace"]
+          },
+        },
+      },
+    };
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/custom.css">
+
+  <style>
+    .split-guide { overflow-y: auto; max-height: calc(100vh - 3.5rem); }
+    .split-sandbox { overflow-y: auto; max-height: calc(100vh - 3.5rem); }
+  </style>
+</head>
+
+<body class="bg-background-dark font-display text-slate-100 antialiased h-screen">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-6 py-3 bg-pink-700 shadow-lg sticky top-0 z-50 h-14">
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined !text-2xl text-white">insights</span>
+      <div>
+        <h1 class="text-lg font-bold text-white">Experiment 9 & 12: Azure ML & Power BI Real-Time Dashboard</h1>
+        <p class="text-xs text-pink-100 font-normal">Predictive Telemetry Scoring &middot; Power BI Push Datasets &middot; Real-Time Analytics</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="azure-simulator.html" class="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition text-white">
+        <span class="material-symbols-outlined !text-base">cloud</span>
+        <span>Cloud Simulator</span>
+      </a>
+      <a href="azure-lab-placeholder.html" class="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-semibold transition text-white">
+        <span class="material-symbols-outlined !text-base">arrow_back</span>
+        <span>Back to Module 2</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Split Screen -->
+  <div class="flex flex-col lg:flex-row" style="height: calc(100vh - 3.5rem);">
+
+    <!-- LEFT PANE: Lab Manual & Theory -->
+    <div class="split-guide w-full lg:w-1/2 h-full bg-background-dark border-r border-slate-800 p-6 sm:p-8">
+
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/10 text-pink-400 text-xs font-semibold uppercase tracking-wider mb-4 border border-pink-500/20">
+        Module 2 &middot; Chapters 9 & 12 Courseware
+      </div>
+
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-3">Azure ML Intelligence & Power BI Delivery</h2>
+      <p class="text-text-dark font-body text-sm leading-relaxed mb-6">
+        The ultimate goal of the data pipeline is delivering actionable business insights. In this experiment, predictive machine learning models trained in <strong class="text-white">Azure ML Studio</strong> score streaming telemetry records in real time before publishing to <strong class="text-white">Microsoft Power BI</strong> live push datasets.
+      </p>
+
+      <!-- Aim -->
+      <div class="bg-slate-900/90 border border-pink-500/40 rounded-2xl p-5 mb-6 shadow-lg">
+        <h3 class="text-base font-bold text-pink-400 flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined !text-lg">flag</span> Aim of the Experiment
+        </h3>
+        <p class="text-sm text-slate-300 font-body leading-relaxed">
+          To train a predictive anomaly classifier in Azure ML, expose a real-time REST scoring endpoint, integrate the scoring logic with the telemetry stream, and visualize live KPI metrics and line charts on an executive Power BI dashboard.
+        </p>
+      </div>
+
+      <!-- Theory -->
+      <div class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-5 mb-6">
+        <h3 class="text-base font-bold text-slate-200 flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined !text-lg text-pink-400">psychology</span>
+          Machine Learning Scoring Workflow
+        </h3>
+        <p class="text-xs text-slate-300 font-body leading-relaxed mb-3">
+          1. Sensor records stream into the model.<br/>
+          2. Features (vibration, temperature, power draw) are extracted.<br/>
+          3. Model predicts probability of failure $P(\text{Anomaly})$.<br/>
+          4. When $P(\text{Anomaly}) \ge \text{Threshold}$, a high-priority alert is pushed to Power BI.
+        </p>
+      </div>
+
+      <!-- Mission Checklist -->
+      <div class="bg-card-dark rounded-xl border border-slate-700 p-4 mb-6 shadow-md">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <span class="material-symbols-outlined !text-base text-pink-400">checklist</span>
+            Lab Mission Milestones
+          </h3>
+          <span id="pbi-badge" class="text-xs px-2.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 font-mono font-bold">0 / 3 Complete</span>
+        </div>
+        <div class="space-y-2 text-xs font-body">
+          <div id="pm1" class="flex items-center gap-2 p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 status-icon">radio_button_unchecked</span>
+            <span>1. Calibrate Anomaly Decision Threshold & Deploy Azure ML Model</span>
+          </div>
+          <div id="pm2" class="flex items-center gap-2 p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 status-icon">radio_button_unchecked</span>
+            <span>2. Feed Real-Time Telemetry Stream to Power BI Live Push Dataset</span>
+          </div>
+          <div id="pm3" class="flex items-center gap-2 p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400">
+            <span class="material-symbols-outlined !text-base text-slate-600 status-icon">radio_button_unchecked</span>
+            <span>3. Trigger Anomaly Spike & Verify Live Power BI Gauge & Chart Alert</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANE: Interactive Azure ML & Power BI Dashboard -->
+    <div class="split-sandbox w-full lg:w-1/2 h-full bg-slate-950 p-6 flex flex-col gap-5">
+
+      <!-- Azure ML Control Panel -->
+      <div class="bg-card-dark rounded-2xl p-5 border border-slate-800 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <span class="material-symbols-outlined text-pink-400">tune</span>
+            Azure ML Scoring Parameters
+          </h3>
+          <span class="text-xs font-mono text-emerald-400">Model: Boosted Decision Tree</span>
+        </div>
+
+        <div class="mb-3">
+          <div class="flex justify-between text-xs text-slate-300 font-semibold mb-1">
+            <span>Anomaly Decision Threshold</span>
+            <span id="threshold-val" class="text-pink-400 font-mono font-bold">0.65</span>
+          </div>
+          <input type="range" id="threshold-slider" min="0.1" max="0.9" step="0.05" value="0.65" oninput="adjustThreshold(this.value)" class="w-full accent-pink-500 cursor-pointer" />
+          <div class="flex justify-between text-[10px] text-slate-500 font-mono mt-1">
+            <span>High Sensitivity (0.1)</span>
+            <span>Balanced (0.5)</span>
+            <span>High Precision (0.9)</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 text-center text-xs font-mono">
+          <div class="p-2 bg-slate-900 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block text-[10px]">Precision</span>
+            <span id="m-precision" class="text-pink-400 font-bold">96.8 %</span>
+          </div>
+          <div class="p-2 bg-slate-900 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block text-[10px]">Recall</span>
+            <span id="m-recall" class="text-pink-400 font-bold">94.2 %</span>
+          </div>
+          <div class="p-2 bg-slate-900 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block text-[10px]">F1-Score</span>
+            <span id="m-f1" class="text-pink-400 font-bold">0.955</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Power BI Dashboard Viewport -->
+      <div class="bg-card-dark rounded-2xl p-5 border border-slate-800 shadow-xl flex-1 flex flex-col">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <span class="material-symbols-outlined text-amber-400">dashboard</span>
+            Power BI Live Executive Telemetry Dashboard
+          </h3>
+          <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-mono">Push Dataset: Streaming</span>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 text-center">
+            <div class="text-[10px] text-slate-400 uppercase">Total Ingested</div>
+            <div id="pbi-total-events" class="text-lg font-bold text-white mt-1 font-mono">1,840</div>
+          </div>
+          <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 text-center">
+            <div class="text-[10px] text-slate-400 uppercase">System Health</div>
+            <div id="pbi-health" class="text-lg font-bold text-emerald-400 mt-1 font-mono">98.5%</div>
+          </div>
+          <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 text-center">
+            <div class="text-[10px] text-slate-400 uppercase">Faults Predicted</div>
+            <div id="pbi-anomalies" class="text-lg font-bold text-pink-400 mt-1 font-mono">0</div>
+          </div>
+        </div>
+
+        <!-- Live Canvas Chart -->
+        <div class="flex-1 bg-slate-950 rounded-xl border border-slate-800 p-3 relative flex flex-col justify-between">
+          <div class="flex justify-between text-[11px] text-slate-400 font-mono">
+            <span>Real-Time Sensor Telemetry Trend (Last 30s)</span>
+            <span id="chart-live-val" class="text-pink-400 font-bold">Current: 24.5&deg;C</span>
+          </div>
+          <canvas id="pbi-chart" width="500" height="140" class="w-full h-32"></canvas>
+        </div>
+
+        <!-- Action Row -->
+        <div class="flex items-center gap-2 mt-4">
+          <button id="btn-toggle-pbi" onclick="togglePbiFeed()" class="flex-1 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow">
+            <span class="material-symbols-outlined !text-sm" id="icon-pbi">play_arrow</span>
+            <span id="lbl-pbi">Start Live Power BI Stream</span>
+          </button>
+          <button onclick="injectAnomalySpike()" class="px-3 py-2 bg-rose-700 hover:bg-rose-600 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow">
+            <span class="material-symbols-outlined !text-sm">bolt</span>
+            Trigger Fault Spike
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let isStreaming = false;
+    let streamTimer = null;
+    let totalEvents = 1840;
+    let totalAnomalies = 0;
+    let doneMilestones = new Set();
+    let currentThreshold = 0.65;
+
+    const canvas = document.getElementById('pbi-chart');
+    const ctx = canvas.getContext('2d');
+    let dataPoints = [22, 23, 24, 23.5, 24.2, 23.8, 24.5, 25.1, 24.8, 25.0];
+
+    function updateMilestone(id) {
+      if (!doneMilestones.has(id)) {
+        doneMilestones.add(id);
+        const item = document.getElementById(id);
+        if (item) {
+          item.classList.remove('text-slate-400');
+          item.classList.add('bg-pink-950/40', 'border-pink-500/40', 'text-pink-300');
+          const icon = item.querySelector('.status-icon');
+          if (icon) {
+            icon.textContent = 'check_circle';
+            icon.classList.remove('text-slate-600');
+            icon.classList.add('text-pink-400');
+          }
+        }
+        document.getElementById('pbi-badge').textContent = `${doneMilestones.size} / 3 Complete`;
+      }
+    }
+
+    function adjustThreshold(val) {
+      currentThreshold = parseFloat(val);
+      document.getElementById('threshold-val').textContent = val;
+      updateMilestone('pm1');
+    }
+
+    function drawChart() {
+      ctx.fillStyle = '#020617';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 1;
+      for (let y = 20; y < canvas.height; y += 30) {
+        ctx.beginPath();
+        ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = '#ec4899';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      const step = canvas.width / (dataPoints.length - 1);
+
+      dataPoints.forEach((pt, i) => {
+        // Map 20 - 50 to height
+        const y = canvas.height - ((pt - 18) / 30) * canvas.height;
+        if (i === 0) ctx.moveTo(0, y);
+        else ctx.lineTo(i * step, y);
+      });
+      ctx.stroke();
+
+      // Draw points
+      dataPoints.forEach((pt, i) => {
+        const y = canvas.height - ((pt - 18) / 30) * canvas.height;
+        ctx.fillStyle = pt > 35 ? '#ef4444' : '#22c55e';
+        ctx.beginPath();
+        ctx.arc(i * step, y, pt > 35 ? 6 : 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function togglePbiFeed() {
+      isStreaming = !isStreaming;
+      const btn = document.getElementById('btn-toggle-pbi');
+      const icon = document.getElementById('icon-pbi');
+      const lbl = document.getElementById('lbl-pbi');
+
+      if (isStreaming) {
+        btn.classList.replace('bg-pink-600', 'bg-emerald-600');
+        icon.textContent = 'pause';
+        lbl.textContent = 'Pause Power BI Stream';
+        updateMilestone('pm2');
+
+        streamTimer = setInterval(() => {
+          totalEvents += 5;
+          document.getElementById('pbi-total-events').textContent = totalEvents.toLocaleString();
+
+          const newVal = 24.0 + (Math.random() * 2.5 - 1.25);
+          dataPoints.shift();
+          dataPoints.push(parseFloat(newVal.toFixed(1)));
+          document.getElementById('chart-live-val').textContent = `Current: ${newVal.toFixed(1)}°C`;
+          drawChart();
+        }, 1500);
+      } else {
+        btn.classList.replace('bg-emerald-600', 'bg-pink-600');
+        icon.textContent = 'play_arrow';
+        lbl.textContent = 'Start Live Power BI Stream';
+        clearInterval(streamTimer);
+      }
+    }
+
+    function injectAnomalySpike() {
+      if (!isStreaming) togglePbiFeed();
+      updateMilestone('pm3');
+
+      totalAnomalies++;
+      document.getElementById('pbi-anomalies').textContent = totalAnomalies;
+      document.getElementById('pbi-health').textContent = '91.2% (ALERT)';
+      document.getElementById('pbi-health').className = 'text-lg font-bold text-rose-400 mt-1 font-mono';
+
+      dataPoints.shift();
+      dataPoints.push(44.2);
+      document.getElementById('chart-live-val').textContent = `Current: 44.2°C (ANOMALY)`;
+      drawChart();
+    }
+
+    // Initial draw
+    drawChart();
+  </script>
+</body>
+</html>
